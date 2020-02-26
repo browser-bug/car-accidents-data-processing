@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Extras
+notes_*.txt
+
+# CSV files too big (these are of course needed by client side)
+*.csv
