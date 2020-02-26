@@ -32,7 +32,7 @@
 *.app
 
 # Extras
-
+.vscode
 
 # CSV files too big (these are of course needed by client side)
 *.csv
