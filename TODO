@@ -1,0 +1,10 @@
+'Cmd/Ctrl+Enter' // Triggers `Todo: Toggle Box`
+'Alt+Enter' // Triggers `Todo: Toggle Box`
+'Alt+D' // Triggers `Todo: Toggle Done`
+'Alt+C' // Triggers `Todo: Toggle Cancelled`
+'Alt+S' // Triggers `Todo: Toggle Start`
+'Cmd/Ctrl+Shift+A' // Triggers  `Todo: Archive`
+
+Todo:
+  ☐ Capire perchè non CSVRow.cpp non vede le reference a CSVRow.h con code runner @started(20-02-26 23:35)
+    Per il momento inseriamo tutto nell'header file a fini di testing.
