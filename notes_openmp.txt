@@ -1,5 +1,10 @@
 Appunti su OpenMP:
 
+	#pragma omp directive_name [clause, ...]
+	{
+	…
+	}
+
 - I/O
 	– OpenMP specifies nothing about parallel I/O
 	– The programmer has to insure that I/O is conducted correctly within the
@@ -20,7 +25,80 @@ Appunti su OpenMP:
 
 	int omp_get_thread_num(void)
 
-- Scoping
+- [Directives] parallel
+	#pragma omp parallel [clause, clause, ... ]
+	{
+	// block
+	}
+	• When a thread reaches a parallel directive, it creates a team of threads and becomes the master of the team
+	• The master is a member of that team and has thread number 0 within that team
+		– Other threads have number 1...N-1
+
+[Directives] for
+    #pragma omp for [clause ...]
+    for_loop
+
+    This must be ecnlosed inside a parallel region in order for the directive to execute in parallel ( #pragma omp parallel for [clause ...] ). 
+    This directive shares iterations of a for loop (which is indeed needed by the syntax). 
+    [Clauses] schedule
+        schedule (type [,chunk])
+        Describe how iterations of the loop are divided among the threads in the team. Default schedule is implementation dependent. 
+            -> type
+                static : loop iterations are divided into blocks of size chunk (default 1) and STATICALLY preassigned to threads.
+                dynamic : loop iterations are divided into blocks of size chunk (default 1) and DYNAMICALLY scheduled amongs the threads so if one of the threads finish his work on a chunk it can immediatly start another one.
+    [Clauses] nowait
+        Threads do not synchronize at the end of the paralell loop.
+    [Clauses] data scope (private, firstprivate, shared, reduction)
+
+[Directives] sections
+    #pragma omp sections [clause ...]
+        {
+            #pragma omp section
+                {
+                // execute A
+                }
+            #pragma omp section
+                {
+                // execute B
+                }
+        }
+
+    Specifies the section(s) to be executed by the threads inside the team. Different sections can be exectuted by differente threads and it is possible that a thread can exectue more than a section.
+    The Clauses are the same (private, reduction, nowait, etc.).
+
+[Directives] single
+    #pragma omp single [private | nowait | ...]
+        {
+        ...
+        }
+
+    Specifies that the following block can be exectued by one thread only, whichever it is so it can vary from a run to another.
+
+[Directives] critical
+    #pragma omp critical [ name ]
+        {
+        ...
+        }
+
+    Specifies a region that can be exectued by only one thread at a time. Behaves like a critical section, so if a thread is inside it and another one wants to enter it this one will wait untile the first one exits. 
+        – Names act as global identifiers
+        – Critical regions with the same name are treated as the same region (one
+        global lock per name)
+        – All critical sections which are unnamed, are treated as the same section
+
+
+[Directives] atomic
+    #pragma omp atomic
+    <single instruction>
+
+    Much faster than critical. Basically is the same concept but applied only to one instruction and specific ones (e.g. x++, x--, x+=expr, x*=expr)
+
+[Directives] barrier
+    #pragma omp barrier
+
+    Barrier synchronizes all threads in the team. When a thread reaches it it must wait all threads that are left behind. When everybody have reached it they can go on.
+
+- [Clauses] Scoping
 	- private(list) : in this list all declared variables are private to each thread. A new object of the same type is declared once for every thread and the original object references are replaced with reference to the new allocatedd object.
 	Variables are uninitialized for each thread (so for example set to 0). 
 	AFTER EXITING THE TEAM SECTION THE VARIABLE HAS THE SAME VALUE IT HAS BEEN INITIALIZED WITH.
@@ -35,7 +113,17 @@ Appunti su OpenMP:
 
 	- default (shared | none) : default scope of ALL VARIABLES IN THE LEXICAL EXTENT OF ANY PARALLEL REGION is either set to shared or none. 
 
-	- reduction (operator: list) : with this you're passing a list of variables that will be taken as for 'private'. At the end of the parallel section all private copies of each thread will be joined togheter depending on the reduction 'operator' and the result will be written in the global shared variable.
+	- reduction (operator: list) : with this you're passing a list of variables that will be taken as for 'private'. At the end of the parallel section all private copies of each thread will be joined togheter depending on the reduction 'operator' and the result will be written in the global shared variable using the reduction operator with the initial global value. E.g.:
+		    
+			int i = 0;
+		#pragma omp parallel num_threads(3) reduction(+ : i)
+			{
+				for (int k = 0; k < n; k++)
+				{
+					i++;
+				} /*-- End of parallel for --*/
+			}
+		i = 0 => Result = 9 ; i = 2 => Result = 11
 
 
 

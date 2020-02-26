@@ -6,17 +6,14 @@ using namespace std;
 
 int main()
 {
-    int i, a = 2;
     int n = 3;
-#pragma omp parallel num_threads(3) private(i, a)
+    int i = 0;
+#pragma omp parallel num_threads(3) reduction(+ : i)
     {
-        printf("a variable first is: %d\n", a);
-        for (i = 0; i < n; i++)
+        for (int k = 0; k < n; k++)
         {
-            a = i + omp_get_thread_num();
-            printf("Thread %d has a value of a=%d for i=%d\n",
-                   omp_get_thread_num(), a, i);
+            i++;
         } /*-- End of parallel for --*/
     }
-    printf("final value of 'a' is : %d\n", a);
+    printf("final value of 'i' is : %d\n", i);
 }
