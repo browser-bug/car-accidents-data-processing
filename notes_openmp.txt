@@ -1,4 +1,4 @@
-OpenMP notes:
+OpenMP Notes:
 
 	#pragma omp directive_name [clause, ...]
 	{
