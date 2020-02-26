@@ -1,0 +1,42 @@
+Appunti su OpenMP:
+
+- I/O
+	– OpenMP specifies nothing about parallel I/O
+	– The programmer has to insure that I/O is conducted correctly within the
+	context of a multi-threaded program
+	
+- Compilation
+	g++ hello.cc -fopenmp -o hello
+	
+- Runtime 
+	• If any thread terminates within a parallel region, all
+	threads in the team terminate...
+	• ...and the work done up until that point is undefined
+	
+- API
+	void omp_set_num_threads(int num_threads)
+	
+	int omp_get_num_threads(void)
+
+	int omp_get_thread_num(void)
+
+- Scoping
+	- private(list) : in this list all declared variables are private to each thread. A new object of the same type is declared once for every thread and the original object references are replaced with reference to the new allocatedd object.
+	Variables are uninitialized for each thread (so for example set to 0). 
+	AFTER EXITING THE TEAM SECTION THE VARIABLE HAS THE SAME VALUE IT HAS BEEN INITIALIZED WITH.
+		#pragma omp parallel private(i,a)
+
+	- firstprivate(list) : this is the same of private with the difference that the variables inside the list are not uninitialized (e.g. 0) but are set to the global value before entering the private section.
+	AFTER EXITING THE TEAM SECTION THE VARIABLE HAS THE SAME VALUE IT HAS BEEN INITIALIZED WITH.
+	
+	- shared (list) : this is shared among all threads in the team and it exists only in one memory location and all threads can read or write that address. Concurrency control is needed! 
+	IF ARRAY IS STATIC (a[10]) it will be passed by copy. IF ARRAY IS DYNAMIC (vector<int> vec) it will be passed is pointer.
+	#pragma omp parallel shared(a)
+
+	- default (shared | none) : default scope of ALL VARIABLES IN THE LEXICAL EXTENT OF ANY PARALLEL REGION is either set to shared or none. 
+
+	- reduction (operator: list) : with this you're passing a list of variables that will be taken as for 'private'. At the end of the parallel section all private copies of each thread will be joined togheter depending on the reduction 'operator' and the result will be written in the global shared variable.
+
+
+
+
