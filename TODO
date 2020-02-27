@@ -7,4 +7,16 @@
 
 Todo:
   ☐ Capire perchè non CSVRow.cpp non vede le reference a CSVRow.h con code runner @started(20-02-26 23:35)
-    Per il momento inseriamo tutto nell'header file a fini di testing.
+    Per il momento inseriamo tutto nell'header file a fini di testing. Probabilmente è un problema non risolvibile se non creando uno script. Essendo un lavoro un po' troppo tedioso credo che lascerò per il momento tutto così e in un secondo momento, quando il progetto sarà più robusto, creerò un makefile.
+
+  ☐ Design statistic class @started(20-02-27 15:24)
+    ☐ Informazioni utili alle statistiche @started(20-02-27 15:27)
+      In un anno ci sono 52 weeks. Per ogni settimana estraggo il numero di morti che sono legati agli incidenti stradali considerati come 'lethal accidents'.
+      Conviene creare tante mappe quanti sono gli anni all'interno del dataset, quindi dato che va dal 2012 al 2017 si avranno 6 mappe.
+
+    ✔ Implement a function to return weekNumber based on date string @started(20-02-27 17:08) @done(20-02-27 18:20) @lasted(1h12m16s)
+
+    ☐ Trovare una buona libreria per plottare l'istogramma dei dati raccolti. Verrebbe una cosa carina da affiancare alle statistiche temporali @started(20-02-27 18:21)
+
+    ☐ Provare a testare se sia possibile integrare openMP oppure serva qualcosa di più "raw" @started(20-02-27 18:22)
+    
