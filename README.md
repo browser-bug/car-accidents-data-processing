@@ -13,13 +13,18 @@ VEHICLE TYPE CODE 5
 
 By contributing factor we intend the reason why the accident took place in the first place.
 
-Main focus on extracting the following information
+Main focus on extracting the following information:
+
   • Number of lethal accidents per week throughout the entire dataset.
+  
   • Number of accidents and percentage of number of deaths per contributing factor in the
     dataset.
+    
       o I.e., for each contributing factor, we want to know how many accidents were due to
       that contributing factor and what percentage of these accidents were also lethal.
+      
   • Number of accidents and average number of lethal accidents per week per borough.
+  
       o I.e., for each borough, we want to know how many accidents there were in that
         borough each week, as well as the average number of lethal accidents that the
         borough had per week.
