@@ -1,11 +1,11 @@
 #include <omp.h>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <vector>
 #include <map>
 #include <algorithm>
 #include <string>
-#include <iomanip>
 
 #include "utilities/CSVIterator.h"
 
@@ -55,7 +55,7 @@ int main()
     // [2] Data processing
     double procBegin = cpuSecond();
 
-    for (int i = 0; i < dataset.size(); ++i)
+    for (unsigned int i = 0; i < dataset.size(); ++i)
     {
         CSVRow row = dataset[i];
         int num_pers_killed = row.getNumPersonKilled();
@@ -79,7 +79,7 @@ int main()
     double outBegin = cpuSecond();
 
     typedef map<int, int>::const_iterator MapIterator;
-    for (int i = 0; i < accPerWeek.size(); ++i)
+    for (unsigned int i = 0; i < accPerWeek.size(); ++i)
     {
         for (MapIterator iter = accPerWeek[i].begin(); iter != accPerWeek[i].end(); iter++)
         {
