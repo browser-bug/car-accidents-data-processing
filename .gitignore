@@ -35,4 +35,4 @@
 .vscode
 
 # CSV files too big (these are of course needed by client side)
-*.csv
+NYPD_Motor_Vehicle_Collisions.csv
