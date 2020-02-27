@@ -47,26 +47,10 @@ Author: Ian A Davidson https://www.codeproject.com/script/Membership/View.aspx?m
 int getWeek(struct std::tm *date);
 int getWeek(std::string date);
 
-int getYear(std::string date)
-{
-    return std::stoi(date.substr(6, 4));
-}
+int getYear(std::string date);
+int getMonth(std::string date);
+int getDay(std::string date);
 
-int getMonth(std::string date)
-{
-    return std::stoi(date.substr(0, 2));
-}
-
-int getDay(std::string date)
-{
-    return std::stoi(date.substr(3, 2));
-}
-
-double cpuSecond()
-{
-    struct timeval tp;
-    gettimeofday(&tp, NULL);
-    return ((double)tp.tv_sec + (double)tp.tv_usec * 1.e-6);
-}
+double cpuSecond();
 
 #endif

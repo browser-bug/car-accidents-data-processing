@@ -72,3 +72,25 @@ int getWeek(string date)
     lTimestamp >> get_time(&lTM, "%m/%d/%Y"); // date format : 03/14/2016
     return getWeek(&lTM);
 }
+
+int getYear(string date)
+{
+    return stoi(date.substr(6, 4));
+}
+
+int getMonth(string date)
+{
+    return stoi(date.substr(0, 2));
+}
+
+int getDay(string date)
+{
+    return stoi(date.substr(3, 2));
+}
+
+double cpuSecond()
+{
+    struct timeval tp;
+    gettimeofday(&tp, NULL);
+    return ((double)tp.tv_sec + (double)tp.tv_usec * 1.e-6);
+}

@@ -30,62 +30,10 @@ public:
         return m_data.size();
     }
 
-    // int getNumPersonKilled()
-    // {
-    //     if (m_data[NUMBER_OF_PERSONS_KILLED].empty() || !m_data[NUMBER_OF_PERSONS_KILLED].compare("Unspecified")) // skip else exceptions are thrown
-    //         return 0;
-    //     int num_pers_killed = 0;
-    //     try
-    //     {
-    //         num_pers_killed = stoi(m_data[NUMBER_OF_PERSONS_KILLED]);
-    //     }
-    //     catch (std::invalid_argument)
-    //     {
-    //         // we just return 0, cases like this are extremely rare anyway
-    //         return 0;
-    //     }
-    //     return num_pers_killed;
-    // }
-
-    // void print() const
-    // {
-    //     auto i = m_data.begin();
-    //     if (i != m_data.end())
-    //         cout << *i;
-
-    //     for (auto it = (++i); it != m_data.end(); ++it)
-    //         cout << ',' << *it;
-    // }
-
-    // void readNextRow(istream &str)
-    // {
-    //     string line;
-    //     getline(str, line);
-
-    //     stringstream lineStream(line);
-    //     string cell;
-
-    //     m_data.clear();
-    //     while (getline(lineStream, cell, ','))
-    //     {
-    //         m_data.push_back(cell);
-    //     }
-    //     // This checks for a trailing comma with no data after it.
-    //     if (!lineStream && cell.empty())
-    //     {
-    //         // If there was a trailing comma then add an empty element.
-    //         m_data.push_back("");
-    //     }
-    // }
-
 private:
     std::vector<std::string> m_data; // This contains a general row data
 };
 
-std::istream &operator>>(std::istream &str, CSVRow &data)
-{
-    data.readNextRow(str);
-    return str;
-}
+std::istream &operator>>(std::istream &str, CSVRow &data);
 
 #endif

@@ -4,9 +4,18 @@ using namespace std;
 
 int CSVRow::getNumPersonKilled()
 {
+    if (m_data[NUMBER_OF_PERSONS_KILLED].empty() || !m_data[NUMBER_OF_PERSONS_KILLED].compare("Unspecified")) // skip else exceptions are thrown
+        return 0;
     int num_pers_killed = 0;
-    if (!m_data[NUMBER_OF_PERSONS_KILLED].empty()) // skip else exceptions are thrown
+    try
+    {
         num_pers_killed = stoi(m_data[NUMBER_OF_PERSONS_KILLED]);
+    }
+    catch (invalid_argument)
+    {
+        // we just return 0, cases like this are extremely rare anyway
+        return 0;
+    }
     return num_pers_killed;
 }
 
@@ -39,4 +48,10 @@ void CSVRow::readNextRow(istream &str)
         // If there was a trailing comma then add an empty element.
         m_data.push_back("");
     }
+}
+
+istream &operator>>(istream &str, CSVRow &data)
+{
+    data.readNextRow(str);
+    return str;
 }
