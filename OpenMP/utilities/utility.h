@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <sys/time.h>
 #include <string>
 
 using namespace std;
@@ -125,4 +127,11 @@ int getMonth(string date)
 int getDay(string date)
 {
     return stoi(date.substr(3, 2));
+}
+
+double cpuSecond()
+{
+    struct timeval tp;
+    gettimeofday(&tp, NULL);
+    return ((double)tp.tv_sec + (double)tp.tv_usec * 1.e-6);
 }

@@ -40,6 +40,8 @@ int main()
         map<int, int>()  // 2017
     };
 
+    double begin = cpuSecond();
+
     // Number of lethal accidents per week throughout the entire dataset. Using index: NUMBER_OF_PERSONS_KILLED
     for (CSVIterator loop(file); loop != CSVIterator(); ++loop)
     {
@@ -58,11 +60,15 @@ int main()
         }
     }
 
-    int year = 2016; // Choose year to print
-    typedef map<int, int>::const_iterator MapIterator;
-    for (MapIterator iter = accPerWeek[year - 2012].begin(); iter != accPerWeek[year - 2012].end(); iter++)
-    {
-        cout << "(" << year << ")Week: " << iter->first << "\t\t\t Num. person killed: ";
-        cout << iter->second << endl;
-    }
+    double duration = cpuSecond() - begin;
+    printf("It took %fs to calculate it\n", duration);
+
+    // // Print result based on year
+    // int year = 2016; // Choose year to print
+    // typedef map<int, int>::const_iterator MapIterator;
+    // for (MapIterator iter = accPerWeek[year - 2012].begin(); iter != accPerWeek[year - 2012].end(); iter++)
+    // {
+    //     cout << "(" << year << ")Week: " << iter->first << "\t\t\t Num. person killed: ";
+    //     cout << iter->second << endl;
+    // }
 }
