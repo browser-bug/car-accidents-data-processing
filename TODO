@@ -18,7 +18,7 @@ Todo:
       
       Il contributing factor può anche essere 'Unspecified' o 'Empty', in tal caso sarà ignorato durante il parsing.
       Ovviamente se una collisione ha uno o più contributing factor uguali lo andiamo a considerare solo una volta. Quindi guardiamo il CF_1, poi il CF_2, ecc.
-      ☐ Comunque analizzando il dataset sembrerebbe che basti il più delle volte cosiderare solo il CF_1. Chiedi comunque conferma a qualcuno.
+      -> In ogni caso non c'è CF_5 senza CF_4, CF_4 senza CF_3 ecc. Quindi si può sempre partire da CF_1 e scorrere avanti.
 
       [numero di incidenti] basta semplicemente contare il numero di tuple all'interno del dataset corrispondenti a quel particolare contributing factor. 
       [percentuale di incidenti letali] durante il ciclo si aumenta un counter corrispondente al numero di incidenti letali e alla fine per calcolare la percentuale si farà -> perc = num_inc_letali / num_inc
