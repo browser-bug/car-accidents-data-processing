@@ -30,8 +30,8 @@ int main()
     //     cout << endl;
     // }
 
-    // map { weekNumber ; num_accidents }
-    vector<map<int, int>> accPerWeek = {
+    // map { weekNumber ; numLethalAccidents }
+    vector<map<int, int>> lethAccPerWeek = {
         map<int, int>(), // 2012
         map<int, int>(), // 2013
         map<int, int>(), // 2014
@@ -64,11 +64,11 @@ int main()
 
         if (num_pers_killed > 0)
         {
-            auto it = accPerWeek[year].find(week);
-            if (it != accPerWeek[year].end())
+            auto it = lethAccPerWeek[year].find(week);
+            if (it != lethAccPerWeek[year].end())
                 it->second += num_pers_killed;
             else
-                accPerWeek[year].insert({week, num_pers_killed});
+                lethAccPerWeek[year].insert({week, num_pers_killed});
         }
     }
 
@@ -79,9 +79,9 @@ int main()
     double outBegin = cpuSecond();
 
     typedef map<int, int>::const_iterator MapIterator;
-    for (unsigned int i = 0; i < accPerWeek.size(); ++i)
+    for (unsigned int i = 0; i < lethAccPerWeek.size(); ++i)
     {
-        for (MapIterator iter = accPerWeek[i].begin(); iter != accPerWeek[i].end(); iter++)
+        for (MapIterator iter = lethAccPerWeek[i].begin(); iter != lethAccPerWeek[i].end(); iter++)
         {
             cout << "(" << (i + 2012) << ")Week: " << iter->first << "\t\t\t Num. person killed: ";
             cout << iter->second << endl;
