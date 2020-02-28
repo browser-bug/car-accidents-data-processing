@@ -10,6 +10,7 @@ Author: Martin York https://stackoverflow.com/users/14065/martin-york
 #include "utility.h"
 
 #include <iostream>
+#include <algorithm>
 #include <vector>
 #include <string>
 
@@ -17,6 +18,7 @@ class CSVRow
 {
 public:
     int getNumPersonKilled();
+    std::vector<std::string> getContributingFactors(); /* Returns disting contributing factors in alphabetical order */
     void print() const;
     void readNextRow(std::istream &str);
 

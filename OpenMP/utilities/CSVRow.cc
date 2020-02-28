@@ -19,6 +19,30 @@ int CSVRow::getNumPersonKilled()
     return num_pers_killed;
 }
 
+// Filtering contributing factors
+bool filter(string cf)
+{
+    return cf.empty() || !cf.compare("Unspecified");
+}
+
+vector<string> CSVRow::getContributingFactors()
+{
+    // Extracting the contributing factors
+    auto first = m_data.begin() + (CONTRIBUTING_FACTOR_VEHICLE_1 + 1);
+    auto last = m_data.begin() + (CONTRIBUTING_FACTOR_VEHICLE_5 + 2);
+    vector<string> cfs(first, last);
+
+    // Removing duplicates
+    sort(cfs.begin(), cfs.end());
+    last = unique(cfs.begin(), cfs.end());
+    cfs.erase(last, cfs.end());
+
+    // Remove empty string or 'Unspecified' if any
+    cfs.erase(std::remove_if(cfs.begin(), cfs.end(), filter), cfs.end());
+
+    return cfs;
+}
+
 void CSVRow::print() const
 {
     auto i = m_data.begin();
