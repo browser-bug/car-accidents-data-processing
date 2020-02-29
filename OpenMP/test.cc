@@ -15,19 +15,19 @@ using namespace std;
 int main()
 {
     // complete dataset NYPD_Motor_Vehicle_Collisions
-    string csv_path = "dataset/data_test.csv";
+    string csv_path = "dataset/NYPD_Motor_Vehicle_Collisions.csv";
     ifstream file(csv_path);
 
-    // Testing on one single row
-    CSVRow row;
-    file >> row >> row;
-    row.print();
-    cout << endl;
-    vector<string> cfs = row.getContributingFactors();
-    for (auto it = cfs.begin(); it != cfs.end(); ++it)
-        cout << *it << "\t";
-    cout << endl;
-    cout << row[UNIQUE_KEY];
+    // // Testing on one single row
+    // CSVRow row;
+    // file >> row >> row;
+    // row.print();
+    // cout << endl;
+    // vector<string> cfs = row.getContributingFactors();
+    // for (auto it = cfs.begin(); it != cfs.end(); ++it)
+    //     cout << *it << "\t";
+    // cout << endl;
+    // cout << row[UNIQUE_KEY];
 
     // // Print the entire dataset
     // for (CSVIterator loop(file); loop != CSVIterator(); loop++)
@@ -39,9 +39,11 @@ int main()
 
     /* PRINT ALL WEEKS FOR EACH YEAR */
     // map<int, list<string>> yearWeeks;
-    // int whichYear = 2016; // specify which year you want
+    // int whichYear = 2017; // specify which year you want
     // CSVRow row;
-    // for (CSVIterator loop(file); loop != CSVIterator(); loop++)
+    // CSVIterator loop(file);
+    // loop++; // skip the header
+    // for (; loop != CSVIterator(); loop++)
     // {
     //     row = (*loop);
     //     int year = getYear(row[DATE]);
