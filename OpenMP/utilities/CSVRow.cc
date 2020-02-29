@@ -59,6 +59,7 @@ void CSVRow::readNextRow(istream &str)
     bool no_quotes = true;
 
     m_data.clear();
+    // Fixed a parsing error when meeting quoted fields thanks to https://stackoverflow.com/a/48086659/4442337
     while (getline(lineStream, field, ','))
     {
         if (static_cast<size_t>(count(field.begin(), field.end(), '"')) % 2 != 0)
