@@ -2,21 +2,17 @@
 
 using namespace std;
 
-int CSVRow::getNumPersonKilled()
+int CSVRow::getNumPersonsKilled()
 {
-    if (m_data[NUMBER_OF_PERSONS_KILLED].empty() || !m_data[NUMBER_OF_PERSONS_KILLED].compare("Unspecified")) // skip else exceptions are thrown
-        return 0;
-    int num_pers_killed = 0;
     try
     {
-        num_pers_killed = stoi(m_data[NUMBER_OF_PERSONS_KILLED]);
+        return stoi(m_data[NUMBER_OF_PERSONS_KILLED]);
     }
     catch (invalid_argument)
     {
         // we just return 0, cases like this are extremely rare anyway
         return 0;
     }
-    return num_pers_killed;
 }
 
 // Filtering contributing factors
@@ -28,8 +24,8 @@ bool filter(string cf)
 vector<string> CSVRow::getContributingFactors()
 {
     // Extracting the contributing factors
-    auto first = m_data.begin() + (CONTRIBUTING_FACTOR_VEHICLE_1 + 1);
-    auto last = m_data.begin() + (CONTRIBUTING_FACTOR_VEHICLE_5 + 2);
+    auto first = m_data.begin() + (CONTRIBUTING_FACTOR_VEHICLE_1);
+    auto last = m_data.begin() + (CONTRIBUTING_FACTOR_VEHICLE_5 + 1);
     vector<string> cfs(first, last);
 
     // Removing duplicates
@@ -59,15 +55,27 @@ void CSVRow::readNextRow(istream &str)
     getline(str, line);
 
     stringstream lineStream(line);
-    string cell;
+    string field, pushField("");
+    bool no_quotes = true;
 
     m_data.clear();
-    while (getline(lineStream, cell, ','))
+    while (getline(lineStream, field, ','))
     {
-        m_data.push_back(cell);
+        if (static_cast<size_t>(count(field.begin(), field.end(), '"')) % 2 != 0)
+        {
+            no_quotes = !no_quotes;
+        }
+
+        pushField += field + (no_quotes ? "" : ",");
+
+        if (no_quotes)
+        {
+            m_data.push_back(pushField);
+            pushField.clear();
+        }
     }
     // This checks for a trailing comma with no data after it.
-    if (!lineStream && cell.empty())
+    if (!lineStream && field.empty())
     {
         // If there was a trailing comma then add an empty element.
         m_data.push_back("");

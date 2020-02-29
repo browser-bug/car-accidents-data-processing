@@ -17,7 +17,7 @@ Author: Martin York https://stackoverflow.com/users/14065/martin-york
 class CSVRow
 {
 public:
-    int getNumPersonKilled();
+    int getNumPersonsKilled();
     std::vector<std::string> getContributingFactors(); /* Returns disting contributing factors in alphabetical order */
     void print() const;
     void readNextRow(std::istream &str);
