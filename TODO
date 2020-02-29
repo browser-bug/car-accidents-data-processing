@@ -5,13 +5,15 @@ Todo:
   ☐ Capire perchè non CSVRow.cpp non vede le reference a CSVRow.h con code runner @started(20-02-26 23:35)
     Per il momento inseriamo tutto nell'header file a fini di testing. Probabilmente è un problema non risolvibile se non creando uno script. Essendo un lavoro un po' troppo tedioso credo che lascerò per il momento tutto così e in un secondo momento, quando il progetto sarà più robusto, creerò un makefile.
 
-  ☐ Design statistic class @started(20-02-27 15:24)
+  
+
+  ☐ Check data and processing correctness @started(20-02-27 15:24)
     Ogni tupla del dataset ha una unique key che è possibile sfruttare per ricercare velocemente una determinata righa all'interno del file.
     
-    ☐ Number of lethal accidents per week throughout the entire dataset. @started(20-02-27 15:27)
-      In un anno ci sono 52 weeks. Per ogni settimana estraggo il numero di morti che sono legati agli incidenti stradali considerati come 'lethal accidents'.
+    ✔ Number of lethal accidents per week throughout the entire dataset. @started(20-02-27 15:27) @done(20-02-28 15:57) @lasted(1d30m45s)
+      In un anno ci sono 52 weeks. Per ogni collisione vado a vedere se ci sono stati dei morti, in caso affermativo vado ad incrementare il numero di lethal accidents.
       Conviene creare tante mappe quanti sono gli anni all'interno del dataset, quindi dato che va dal 2012 al 2017 si avranno 6 mappe.
-      In ognuna di esse si utilizzerà una mappa del tipo {weekNumber, numDeaths}.
+      In ognuna di esse si utilizzerà una mappa del tipo {weekNumber, lethalAccidents}.
 
     ☐ Number of accidents and percentage of number of deaths per contributing factor in the dataset.@started(20-02-28 01:31)
       I.e., for each contributing factor, we want to know how many accidents were due to that contributing factor and what percentage of these accidents were also lethal.
@@ -25,11 +27,13 @@ Todo:
 
       Sempre seguendo l'idea delle mappe conviene fare una mappa per ogni contributing factor ed associarvi una coppia std::pair contenente le due informazioni.
 
-    ✔ Implement a function to return weekNumber based on date string @started(20-02-27 17:08) @done(20-02-27 18:20) @lasted(1h12m16s)
+  ☐ Trovare una buona libreria per plottare l'istogramma dei dati raccolti. Verrebbe una cosa carina da affiancare alle statistiche temporali @started(20-02-27 18:21)
 
-    ☐ Trovare una buona libreria per plottare l'istogramma dei dati raccolti. Verrebbe una cosa carina da affiancare alle statistiche temporali @started(20-02-27 18:21)
+  ✔ Fixa il parsing delle righe nel caso in cui si abbia una stringa quotata @started(20-02-29 02:51) @done(20-02-29 10:45) @lasted(7h54m)
+    E.s. "IF/O 519 GATEWAY DRIVE,BROOKLYN,NY 11239"
 
-    ☐ Provare a testare se sia possibile integrare openMP oppure serva qualcosa di più "raw" @started(20-02-27 18:22)
+  ☐ Provare a testare se sia possibile integrare openMP oppure serva qualcosa di più "raw" @started(20-02-27 18:22)
+    Leggendo online l'unica datastructure (oltre ovviamente agli array in C) che supporta OpenMP (o almeno la versione d'utilizzo) è il vector facendo però attenzione che tutte le azioni che implicano un resize (e.s. push_back()) non sono thread-safe!
 
 OpenMP Notes:
 
