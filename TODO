@@ -2,12 +2,12 @@ CSV Header:
 DATE,TIME,BOROUGH,ZIP CODE,LATITUDE,LONGITUDE,LOCATION,ON STREET NAME,CROSS STREET NAME,OFF STREET NAME,NUMBER OF PERSONS INJURED,NUMBER OF PERSONS KILLED,NUMBER OF PEDESTRIANS INJURED,NUMBER OF PEDESTRIANS KILLED,NUMBER OF CYCLIST INJURED,NUMBER OF CYCLIST KILLED,NUMBER OF MOTORIST INJURED,NUMBER OF MOTORIST KILLED,CONTRIBUTING FACTOR VEHICLE 1,CONTRIBUTING FACTOR VEHICLE 2,CONTRIBUTING FACTOR VEHICLE 3,CONTRIBUTING FACTOR VEHICLE 4,CONTRIBUTING FACTOR VEHICLE 5,UNIQUE KEY,VEHICLE TYPE CODE 1,VEHICLE TYPE CODE 2,VEHICLE TYPE CODE 3,VEHICLE TYPE CODE 4,VEHICLE TYPE CODE 5
 
 Todo:
-  ☐ Capire perchè non CSVRow.cpp non vede le reference a CSVRow.h con code runner @started(20-02-26 23:35)
+  ✔ Capire perchè non CSVRow.cpp non vede le reference a CSVRow.h con code runner @started(20-02-26 23:35) @done(20-03-01 13:07) @lasted(3d13h32m53s)
     Per il momento inseriamo tutto nell'header file a fini di testing. Probabilmente è un problema non risolvibile se non creando uno script. Essendo un lavoro un po' troppo tedioso credo che lascerò per il momento tutto così e in un secondo momento, quando il progetto sarà più robusto, creerò un makefile.
 
   
 
-  ☐ Check data and processing correctness @started(20-02-27 15:24)
+  ✔ Check data and processing correctness @started(20-02-27 15:24) @done(20-03-01 13:07) @lasted(2d21h43m35s)
     Ogni tupla del dataset ha una unique key che è possibile sfruttare per ricercare velocemente una determinata righa all'interno del file.
     
     ✔ Number of lethal accidents per week throughout the entire dataset. @started(20-02-27 15:27) @done(20-02-28 15:57) @lasted(1d30m45s)
@@ -15,7 +15,7 @@ Todo:
       Conviene creare tante mappe quanti sono gli anni all'interno del dataset, quindi dato che va dal 2012 al 2017 si avranno 6 mappe.
       In ognuna di esse si utilizzerà una mappa del tipo {weekNumber, lethalAccidents}.
 
-    ☐ Number of accidents and percentage of number of deaths per contributing factor in the dataset.@started(20-02-28 01:31)
+    ✔ Number of accidents and percentage of number of deaths per contributing factor in the dataset.@started(20-02-28 01:31) @done(20-03-01 13:07) @lasted(2d11h36m22s)
       I.e., for each contributing factor, we want to know how many accidents were due to that contributing factor and what percentage of these accidents were also lethal.
       
       Il contributing factor può anche essere 'Unspecified' o 'Empty', in tal caso sarà ignorato durante il parsing.
@@ -26,15 +26,26 @@ Todo:
       [percentuale di incidenti letali] durante il ciclo si aumenta un counter corrispondente al numero di incidenti letali e alla fine per calcolare la percentuale si farà -> perc = num_inc_letali / num_inc
 
       Sempre seguendo l'idea delle mappe conviene fare una mappa per ogni contributing factor ed associarvi una coppia std::pair contenente le due informazioni.
+    
+    ✔ Number of accidents and average number of lethal accidents per week per borough. @done(20-03-01 13:07)
+      I.e., for each borough, we want to know how many accidents there were in that borough each week, as well as the average number of lethal accidents that the borough had per week.
 
-  ☐ Trovare una buona libreria per plottare l'istogramma dei dati raccolti. Verrebbe una cosa carina da affiancare alle statistiche temporali @started(20-02-27 18:21)
+      Borough (quartieri) nel dataset -> [MANHATTAN, QUEENS, BRONX, BROOKLYN, STATEN ISLAND]
 
-  ✔ Fixa il parsing delle righe nel caso in cui si abbia una stringa quotata @started(20-02-29 02:51) @done(20-02-29 10:45) @lasted(7h54m)
-    E.s. "IF/O 519 GATEWAY DRIVE,BROOKLYN,NY 11239"
+      Trovati tutti i possibili borough nel dataset ed associando ad ognuno di essi una mappa {week, {numAccidents, numLethalAccidents}}, scorrendo il dataset per ogni tupla ottengo il borough, la week e il numero di morti (per capire se è un incidente letale o meno). Con questi dati a disposizione vado a popolare la mia struttura d'appoggio.
+      -> A volte il borough non è specificato (e.s. stringa vuota) quindi filtrare questa possibilità.
 
-  ☐ Provare a testare se sia possibile integrare openMP oppure serva qualcosa di più "raw" @started(20-02-27 18:22)
-    Leggendo online l'unica datastructure (oltre ovviamente agli array in C) che supporta OpenMP (o almeno la versione d'utilizzo) è il vector facendo però attenzione che tutte le azioni che implicano un resize (e.s. push_back()) non sono thread-safe!
+      Per stampare l'output scorro la struttura dati e per ogni borough, stampo la lista delle weeks con affianco il numero di incidenti salvandomi a parte via via la somma degli incidenti letali. A fine calcolo l'average facendo numLethalAccidents / numWeeks.
+      
+     ✔ Fixa il parsing delle righe nel caso in cui si abbia una stringa quotata @started(20-02-29 02:51) @done(20-02-29 10:45) @lasted(7h54m)
+      E.s. "IF/O 519 GATEWAY DRIVE,BROOKLYN,NY 11239"
 
+      
+    ☐ Provare a testare se sia possibile integrare openMP oppure serva qualcosa di più "raw" @started(20-02-27 18:22)
+      Leggendo online l'unica datastructure (oltre ovviamente agli array in C) che supporta OpenMP (o almeno la versione d'utilizzo) è il vector facendo però attenzione che tutte le azioni che implicano un resize (e.s. push_back()) non sono thread-safe!
+      
+    ☐ Trovare una buona libreria per plottare l'istogramma dei dati raccolti. Verrebbe una cosa carina da affiancare alle statistiche temporali @started(20-02-27 18:21)
+    
 OpenMP Notes:
 
       #pragma omp directive_name [clause, ...]
