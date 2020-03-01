@@ -33,6 +33,7 @@
 
 # Extras
 .vscode
+output_serial.txt
 
 # CSV files too big (these are of course needed by client side)
 NYPD_Motor_Vehicle_Collisions.csv
