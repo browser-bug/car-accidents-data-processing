@@ -29,13 +29,23 @@ int main()
     // cout << endl;
     // cout << row[UNIQUE_KEY];
 
-    // // Print the entire dataset
-    // for (CSVIterator loop(file); loop != CSVIterator(); loop++)
-    // {
-    //     CSVRow row = (*loop);
-    //     row.print();
-    //     cout << endl;
-    // }
+    vector<string> borough;
+
+    // Print the entire dataset
+    CSVIterator loop(file);
+    loop++; // skip header
+    for (; loop != CSVIterator(); loop++)
+    {
+        CSVRow row = (*loop);
+        if (find(borough.begin(), borough.end(), row[BOROUGH]) == borough.end() && !row[BOROUGH].empty())
+            borough.push_back(row[BOROUGH]);
+    }
+
+    cout << "Boroughs : " << endl;
+    for (auto it = borough.begin(); it != borough.end(); ++it)
+    {
+        cout << *it << endl;
+    }
 
     /* PRINT ALL WEEKS FOR EACH YEAR */
     // map<int, list<string>> yearWeeks;
