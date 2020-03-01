@@ -17,15 +17,9 @@ int main()
     string csv_path = "dataset/NYPD_Motor_Vehicle_Collisions.csv";
     ifstream file(csv_path);
 
-    // map { weekNumber ; numLethalAccidents }
-    vector<map<int, int>> lethAccPerWeek = {
-        map<int, int>(), // 2012
-        map<int, int>(), // 2013
-        map<int, int>(), // 2014
-        map<int, int>(), // 2015
-        map<int, int>(), // 2016
-        map<int, int>()  // 2017
-    };
+    // map { { year, week }, numLethalAccidents }
+    typedef pair<int, int> yearWeekKey;
+    map<yearWeekKey, int> lethAccPerWeek;
 
     double overallBegin = cpuSecond();
 
@@ -47,10 +41,10 @@ int main()
     for (unsigned int i = 0; i < dataset.size(); ++i)
     {
         CSVRow row = dataset[i];
-        int num_pers_killed = row.getNumPersonsKilled();
+        int lethal = (row.getNumPersonsKilled() > 0) ? 1 : 0;
         int week = getWeek(row[DATE]);
         int month = getMonth(row[DATE]);
-        int year = getYear(row[DATE]) - 2012;
+        int year = getYear(row[DATE]);
 
         // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
         // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
@@ -59,14 +53,11 @@ int main()
         else if ((week == 52 || week == 53) && month == 1)
             year--;
 
-        if (num_pers_killed > 0) // We have a lethal accident
-        {
-            auto it = lethAccPerWeek[year].find(week);
-            if (it != lethAccPerWeek[year].end())
-                (it->second)++;
-            else
-                lethAccPerWeek[year].insert({week, 1});
-        }
+        auto it = lethAccPerWeek.find({year, week});
+        if (it != lethAccPerWeek.end() && lethal)
+            (it->second)++;
+        else
+            lethAccPerWeek.insert({{year, week}, lethal});
     }
 
     double procDuration = cpuSecond() - procBegin;
@@ -76,26 +67,23 @@ int main()
 
     int totalWeeks = 0;
     int totalAccidents = 0;
-    typedef map<int, int>::const_iterator MapIterator;
-    for (unsigned int i = 0; i < lethAccPerWeek.size(); ++i)
+    typedef map<yearWeekKey, int>::const_iterator MapIterator;
+    for (auto iter = lethAccPerWeek.begin(); iter != lethAccPerWeek.end(); iter++)
     {
-        for (MapIterator iter = lethAccPerWeek[i].begin(); iter != lethAccPerWeek[i].end(); iter++)
-        {
-            cout << "(" << (i + 2012) << ")Week: " << iter->first << "\t\t\t Num. lethal accidents: ";
-            cout << iter->second << endl;
-            totalAccidents += iter->second;
-        }
-        totalWeeks += lethAccPerWeek[i].size();
+        cout << "(" << iter->first.first << ")Week: " << iter->first.second << "\t\t\t Num. lethal accidents: ";
+        cout << iter->second << endl;
+        totalAccidents += iter->second;
+        totalWeeks++;
     }
+    cout << "Total weeks: " << totalWeeks << "\t\t\tTotal accidents: " << totalAccidents << endl;
 
     double outDuration = cpuSecond() - outBegin;
 
     double overallDuration = cpuSecond() - overallBegin;
 
+    cout << endl;
     cout << "Overall process duration is " << overallDuration << "s\n";
     cout << "It took " << loadDuration << "s to load the dataset\n";
     cout << "It took " << procDuration << "s to process the data\n";
     cout << "It took " << outDuration << "s to output the result\n";
-    cout << "Total weeks: " << totalWeeks << endl;
-    cout << "Total accidents: " << totalAccidents << endl;
 }

@@ -17,7 +17,8 @@ int main()
     string csv_path = "dataset/NYPD_Motor_Vehicle_Collisions.csv";
     ifstream file(csv_path);
 
-    map<string, pair<int, double>> AccAndPerc; // map { contributingFactor ; {numAccidents, percNumDeaths} }
+    // map { contributingFactor ; {numAccidents, numLethalAccidents} }
+    map<string, pair<int, int>> accAndPerc;
 
     double overallBegin = cpuSecond();
 
@@ -42,20 +43,19 @@ int main()
         vector<string> cfs = row.getContributingFactors();
         if (cfs.empty())
             continue;
-        double lethal = (row.getNumPersonsKilled() > 0) ? 1 : 0;
+        int lethal = (row.getNumPersonsKilled() > 0) ? 1 : 0;
 
         // For every CF found I insert it into the map
         for (auto itr = cfs.begin(); itr != cfs.end(); ++itr)
         {
-            auto it = AccAndPerc.find(*itr);
-            if (it != AccAndPerc.end())
+            auto it = accAndPerc.find(*itr);
+            if (it != accAndPerc.end())
             {
-                (it->second.first)++; // increment num. accidents for this CF
-                if (lethal)
-                    (it->second.second)++; // increment num. of deaths for this CF
+                (it->second.first)++;          // increment num. accidents for this CF
+                (it->second.second) += lethal; // increment num. lethal accidents for this CF
             }
             else
-                AccAndPerc.insert({row[CONTRIBUTING_FACTOR_VEHICLE_1], {1, lethal}});
+                accAndPerc.insert({*itr, {1, lethal}});
         }
     }
 
@@ -64,12 +64,13 @@ int main()
     // [3] Output result
     double outBegin = cpuSecond();
 
-    typedef map<string, pair<int, double>>::const_iterator MapIterator;
-    for (MapIterator iter = AccAndPerc.begin(); iter != AccAndPerc.end(); iter++)
+    typedef map<string, pair<int, int>>::const_iterator MapIterator;
+    for (MapIterator iter = accAndPerc.begin(); iter != accAndPerc.end(); iter++)
     {
+        double perc = double(iter->second.second) / iter->second.first;
         cout << iter->first << endl
              << "\t\tNum. of accidents: " << iter->second.first
-             << "\t\t\tPerc. lethal accidents: " << setprecision(2) << fixed << (iter->second.second / iter->second.first) * 100 << "%"
+             << "\t\t\tPerc. lethal accidents: " << setprecision(2) << fixed << perc * 100 << "%"
              << endl;
     }
 
@@ -77,6 +78,7 @@ int main()
 
     double overallDuration = cpuSecond() - overallBegin;
 
+    cout << endl;
     cout << "Overall process duration is " << overallDuration << "s\n";
     cout << "It took " << loadDuration << "s to load the dataset\n";
     cout << "It took " << procDuration << "s to process the data\n";
