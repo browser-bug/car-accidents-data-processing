@@ -38,14 +38,80 @@ Todo:
       Per stampare l'output scorro la struttura dati e per ogni borough, stampo la lista delle weeks con affianco il numero di incidenti salvandomi a parte via via la somma degli incidenti letali. A fine calcolo l'average facendo numLethalAccidents / numWeeks.
       
      ✔ Fixa il parsing delle righe nel caso in cui si abbia una stringa quotata @started(20-02-29 02:51) @done(20-02-29 10:45) @lasted(7h54m)
-      E.s. "IF/O 519 GATEWAY DRIVE,BROOKLYN,NY 11239"
+      E.s. "IF/O 519 GATEWAY DRIVE,BROOKLYN,NY 11239"  
 
-      
+
     ☐ Provare a testare se sia possibile integrare openMP oppure serva qualcosa di più "raw" @started(20-02-27 18:22)
       Leggendo online l'unica datastructure (oltre ovviamente agli array in C) che supporta OpenMP (o almeno la versione d'utilizzo) è il vector facendo però attenzione che tutte le azioni che implicano un resize (e.s. push_back()) non sono thread-safe!
       
     ☐ Trovare una buona libreria per plottare l'istogramma dei dati raccolti. Verrebbe una cosa carina da affiancare alle statistiche temporali @started(20-02-27 18:21)
     
+Additional informations:
+  -  https://stackoverflow.com/questions/10766263/message-passing-interface-on-shared-memory-systems-performance
+  Let's assume we only consider MPI and OpenMP, since they are the two major representatives of the two parallel programming families you mention. For distributed systems, MPI is the only option between different nodes. Within a single node, however, as you well say, you can still use MPI and use OpenMP too. Which one will perform better really depends on the application you are running, and specifically in its computation/communication ratio. Here you can see a comparison of MPI and OpenMP for a multicore processor, where they confirm the same observation.
+  You can go a step further and use a hybrid approach. Use MPI between the nodes and then use OpenMP within nodes. This is called hybrid MPI+OpenMP parallel programming. You can also apply this within a node that contains a hybrid CMP+SMT processor.
+  You can check some information here and here. Moreover this paper compares an MPI approach vs a hybrid MPI+OpenMP one.
+
+  - Contributing Factors
+  contributingFactors = {
+    {"Accelerator Defective", 0},
+    {"Aggressive Driving/Road Rage", 1},
+    {"Alcohol Involvement", 2},
+    {"Animals Action", 3},
+    {"Backing Unsafely", 4},
+    {"Brakes Defective", 5},
+    {"Cell Phone (hand-held)", 6},
+    {"Cell Phone (hands-free)", 7},
+    {"Driver Inattention/Distraction", 8},
+    {"Driver Inexperience", 9},
+    {"Driverless/Runaway Vehicle", 10},
+    {"Drugs (Illegal)", 11},
+    {"Failure to Keep Right", 12},
+    {"Failure to Yield Right-of-Way", 13},
+    {"Fatigued/Drowsy", 14},
+    {"Fell Asleep", 15},
+    {"Following Too Closely", 16},
+    {"Glare", 17},
+    {"Headlights Defective", 18},
+    {"Illness", 19},
+    {"Lane Marking Improper/Inadequate", 20},
+    {"Lost Consciousness", 21},
+    {"Obstruction/Debris", 22},
+    {"Other Electronic Device", 23},
+    {"Other Lighting Defects", 24},
+    {"Other Vehicular", 25},
+    {"Outside Car Distraction", 26},
+    {"Oversized Vehicle", 27},
+    {"Passenger Distraction", 28},
+    {"Passing or Lane Usage Improper", 29},
+    {"Pavement Defective", 30},
+    {"Pavement Slippery", 31},
+    {"Pedestrian/Bicyclist/Other Pedestrian Error/Confusion", 32},
+    {"Physical Disability", 33},
+    {"Prescription Medication", 34},
+    {"Reaction to Other Uninvolved Vehicle", 35},
+    {"Shoulders Defective/Improper", 36},
+    {"Steering Failure", 37},
+    {"Tire Failure/Inadequate", 38},
+    {"Tow Hitch Defective", 39},
+    {"Traffic Control Device Improper/Non-Working", 40},
+    {"Traffic Control Disregarded", 41},
+    {"Turning Improperly", 42},
+    {"Unsafe Lane Changing", 43},
+    {"Unsafe Speed", 44},
+    {"View Obstructed/Limited", 45},
+    {"Windshield Inadequate", 46}
+  }
+
+  - Boroughs
+  boroughs{
+    {"BRONX", 0},
+    {"BROOKLYN", 1},
+    {"MANHATTAN", 2},
+    {"QUEENS", 3},
+    {"STATEN ISLAND", 4}
+  }
+
 OpenMP Notes:
 
       #pragma omp directive_name [clause, ...]
