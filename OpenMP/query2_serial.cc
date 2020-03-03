@@ -9,6 +9,8 @@
 
 #include "utilities/CSVIterator.h"
 
+#define NUM_CONTRIBUTING_FACTORS 47
+
 using namespace std;
 
 int main()
@@ -78,7 +80,8 @@ int main()
 
     double overallDuration = cpuSecond() - overallBegin;
 
-    cout << endl;
+    // Print statistics
+    cout << fixed << setprecision(8) << endl;
     cout << "Overall process duration is " << overallDuration << "s\n";
     cout << "It took " << loadDuration << "s to load the dataset\n";
     cout << "It took " << procDuration << "s to process the data\n";

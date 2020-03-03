@@ -9,12 +9,16 @@
 
 #include "utilities/CSVIterator.h"
 
+#define ORIGINAL_SIZE 955928
+#define TEST_SIZE 29999
+
 using namespace std;
 
 int main()
 {
-    // complete dataset NYPD_Motor_Vehicle_Collisions
-    string csv_path = "dataset/NYPD_Motor_Vehicle_Collisions.csv";
+    bool testing = false; // switch between dataset for testing and original dataset
+
+    string csv_path = testing ? "dataset/data_test.csv" : "dataset/NYPD_Motor_Vehicle_Collisions.csv";
     ifstream file(csv_path);
 
     // map { { year, week }, numLethalAccidents }
@@ -26,19 +30,25 @@ int main()
     // [1] Loading data from file
     double loadBegin = cpuSecond();
 
-    // CSVRow* dataset = new CSVRow[955928];
-    vector<CSVRow> dataset;
-    CSVIterator loop(file);
-    ++loop; // skip the header
-    for (; loop != CSVIterator(); ++loop)
-        dataset.push_back((*loop));
+    int csv_size = testing ? TEST_SIZE : ORIGINAL_SIZE;
+
+    CSVRow *dataset = new CSVRow[csv_size];
+    file >> dataset[0] >> dataset[0]; // skip the header
+    for (int i = 1; i < csv_size; i++)
+        file >> dataset[i];
+
+    // vector<CSVRow> dataset;
+    // CSVIterator loop(file);
+    // ++loop; // skip the header
+    // for (; loop != CSVIterator(); ++loop)
+    //     dataset.push_back((*loop));
 
     double loadDuration = cpuSecond() - loadBegin;
 
     // [2] Data processing
     double procBegin = cpuSecond();
 
-    for (unsigned int i = 0; i < dataset.size(); ++i)
+    for (int i = 0; i < csv_size; ++i)
     {
         CSVRow row = dataset[i];
         int lethal = (row.getNumPersonsKilled() > 0) ? 1 : 0;
@@ -67,7 +77,7 @@ int main()
 
     int totalWeeks = 0;
     int totalAccidents = 0;
-    typedef map<yearWeekKey, int>::const_iterator MapIterator;
+
     for (auto iter = lethAccPerWeek.begin(); iter != lethAccPerWeek.end(); iter++)
     {
         cout << "(" << iter->first.first << ")Week: " << iter->first.second << "\t\t\t Num. lethal accidents: ";
@@ -81,7 +91,8 @@ int main()
 
     double overallDuration = cpuSecond() - overallBegin;
 
-    cout << endl;
+    // Print statistics
+    cout << fixed << setprecision(8) << endl;
     cout << "Overall process duration is " << overallDuration << "s\n";
     cout << "It took " << loadDuration << "s to load the dataset\n";
     cout << "It took " << procDuration << "s to process the data\n";

@@ -112,6 +112,8 @@ int main()
 
     double overallDuration = cpuSecond() - overallBegin;
 
+    // Print statistics
+    cout << fixed << setprecision(8) << endl;
     cout << "Overall process duration is " << overallDuration << "s\n";
     cout << "It took " << loadDuration << "s to load the dataset\n";
     cout << "It took " << procDuration << "s to process the data\n";
