@@ -34,6 +34,8 @@
 # Extras
 .vscode
 output_serial.txt
+MPI/examples/kmeans_mpi/kmeans
+MPI/examples/kmeans_mpi/kmeans_serial
 
 # CSV files too big (these are of course needed by client side)
 NYPD_Motor_Vehicle_Collisions.csv
