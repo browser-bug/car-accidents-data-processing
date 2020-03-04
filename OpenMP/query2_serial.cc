@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <string>
 
-#include "utilities/CSVIterator.h"
+#include "../utilities/CSVIterator.h"
 
 #define NUM_CONTRIBUTING_FACTORS 47
 
@@ -16,7 +16,7 @@ using namespace std;
 int main()
 {
     // complete dataset NYPD_Motor_Vehicle_Collisions
-    string csv_path = "dataset/NYPD_Motor_Vehicle_Collisions.csv";
+    string csv_path = "../dataset/NYPD_Motor_Vehicle_Collisions.csv";
     ifstream file(csv_path);
 
     // map { contributingFactor ; {numAccidents, numLethalAccidents} }

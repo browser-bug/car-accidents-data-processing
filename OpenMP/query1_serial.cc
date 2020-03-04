@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <string>
 
-#include "utilities/CSVIterator.h"
+#include "../utilities/CSVIterator.h"
 
 #define ORIGINAL_SIZE 955928
 #define TEST_SIZE 29999
@@ -18,7 +18,7 @@ int main()
 {
     bool testing = false; // switch between dataset for testing and original dataset
 
-    string csv_path = testing ? "dataset/data_test.csv" : "dataset/NYPD_Motor_Vehicle_Collisions.csv";
+    string csv_path = testing ? "../dataset/data_test.csv" : "../dataset/NYPD_Motor_Vehicle_Collisions.csv";
     ifstream file(csv_path);
 
     // map { { year, week }, numLethalAccidents }
