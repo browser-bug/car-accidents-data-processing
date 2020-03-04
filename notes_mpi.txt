@@ -1,0 +1,30 @@
+
+General format: 
+	rc = MPI_Xxxxx(parameter, ...)
+
+Compiling:
+	mpic++ -o hello hello.cc
+	mpirun [-oversubscribe]
+		[-use-hwthread-cpus]
+		-np <N> hello
+
+Communicators:
+	MPI_COMM_WORLD is the predefined comm.
+	
+	Every process within a communicator has its own rank (0,1,...,N) and they are used to specify source and destination of messages.
+
+Ordering:
+	MPI guarantess that if M1 and M2 are sent with this order, they'll be received in this order.
+
+Messaging:
+MPI_Send(void *buf, int count, MPI_Datatype datatype,
+int dest, int tag, MPI_Comm comm)
+
+MPI_Recv(void *buf, int count, MPI_Datatype datatype,
+int source, int tag, MPI_Comm comm, MPI_Status *status)
+
+	source : can be set to MPI_ANY_SOURCE
+	tag : uniquely identify a message and can be set to MPI_ANY_TAG.
+	status : contains additional information about the sender and message tag
+
+MPI_Ssend and MPI_Rsend are the blocking versions of the methods. MPI_Sendrecv blocks until the sending buffer has been totally transferred and arrived at the receiving buffer.
