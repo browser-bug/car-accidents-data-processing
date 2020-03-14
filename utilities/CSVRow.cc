@@ -4,9 +4,14 @@ using namespace std;
 
 int CSVRow::getNumPersonsKilled()
 {
+    int num_ped_killed, num_cycl_killed, num_mot_killed = 0;
     try
     {
-        return stoi(m_data[NUMBER_OF_PERSONS_KILLED]);
+        num_ped_killed = stoi(m_data[NUMBER_OF_PEDESTRIANS_KILLED]);
+        num_cycl_killed = stoi(m_data[NUMBER_OF_CYCLIST_KILLED]);
+        num_mot_killed = stoi(m_data[NUMBER_OF_MOTORIST_KILLED]);
+
+        return (num_ped_killed + num_cycl_killed + num_mot_killed);
     }
     catch (invalid_argument)
     {
