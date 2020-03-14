@@ -1,4 +1,4 @@
-#include <omp.h>
+#include <mpi.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -7,97 +7,90 @@
 #include <list>
 #include <algorithm>
 #include <string>
+#include <string.h> // for string copy
 
 #include "../utilities/CSVIterator.h"
 
-#define ORIGINAL_SIZE 955928
-#define TEST_SIZE 29999
-
-#define NUM_YEARS 6
-#define NUM_WEEKS_PER_YEAR 53
-
-#define NUM_CONTRIBUTING_FACTORS 47
+#define MAX_CF_LENGTH 55
 
 using namespace std;
 
-int main()
+typedef struct AccPair
 {
-    bool testing = true; // switch between dataset for testing and original dataset
+    AccPair() : numAccidents(0), numPersKilled(0){};
+    AccPair(int na,
+            int nla) : numAccidents(na), numPersKilled(nla){};
 
-    string csv_path = testing ? "../dataset/data_test.csv" : "../dataset/NYPD_Motor_Vehicle_Collisions.csv";
-    ifstream file(csv_path);
+    int numAccidents;
+    int numPersKilled;
+} AccPair;
 
-    // LOADING THE DATASET
-    int csv_size = testing ? TEST_SIZE : ORIGINAL_SIZE;
+void pairSum(void *inputBuffer, void *outputBuffer, int *len, MPI_Datatype *dptr)
+{
+    AccPair *in = (AccPair *)inputBuffer;
+    AccPair *inout = (AccPair *)outputBuffer;
 
-    // Support dictonaries
-    int indexCF = 0;
-    map<string, int> contributingFactors;
-    int indexB = 0;
-    map<string, int> boroughs;
-
-    CSVRow *dataset = new CSVRow[csv_size];
-    for (int i = 0; i < csv_size; i++)
+    for (int i = 0; i < *len; ++i)
     {
-        if (i == 0)
-            file >> dataset[0] >> dataset[0]; // skip the header
-        else
-            file >> dataset[i];
-
-        // Creating dictonary for query 2
-        string cf = (dataset[i])[CONTRIBUTING_FACTOR_VEHICLE_1];
-        if (!cf.empty() && cf.compare("Unspecified") && contributingFactors.find(cf) == contributingFactors.end())
-            contributingFactors.insert({cf, indexCF++});
-
-        // Creating dictonary for query 3
-        string b = (dataset[i])[BOROUGH];
-        if (!b.empty() && b.compare("Unspecified") && boroughs.find(b) == boroughs.end())
-            boroughs.insert({b, indexB++});
+        inout[i].numAccidents += in[i].numAccidents;
+        inout[i].numPersKilled += in[i].numPersKilled;
     }
+}
 
-    /////////////
-    /* QUERY 1 */
-    /////////////
+int main(int argc, char **argv)
+{
 
-    // years [2012, 2013, 2014, 2015, 2016, 2017]
-    int lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
+    AccPair global_accAndPerc[4];
+    map<string, int> dictonary;
 
-    
-    for (int i = 0; i < csv_size; ++i)
+    MPI_Datatype accPairType;
+    // TODO add these two lines if everything works out
+    // MPI_Type_contiguous( 2, MPI_INT, &accPairType );
+    // MPI_Type_commit( &accPairType );
+    int aptLength[2] = {1, 1};
+    MPI_Aint aptDisplacements[2] = {
+        offsetof(AccPair, numAccidents),
+        offsetof(AccPair, numPersKilled)};
+    MPI_Datatype aptTypes[2] = {MPI_INT, MPI_INT};
+
+    // MPI Operators definitions
+    MPI_Op accPairSum;
+
+    int myrank, num_workers;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    MPI_Comm_size(MPI_COMM_WORLD, &num_workers);
+
+    MPI_Type_create_struct(2, aptLength, aptDisplacements, aptTypes, &accPairType);
+    MPI_Type_commit(&accPairType);
+
+    MPI_Op_create(pairSum, true, &accPairSum);
+
+    srand(time(0));
+    AccPair local_accAndPerc[4] = {AccPair(rand() % 10, rand() % 10), AccPair(rand() % 10, rand() % 10), AccPair(rand() % 10, rand() % 10), AccPair(rand() % 10, rand() % 10)};
+
+    if (myrank == 0)
     {
-        CSVRow row = dataset[i];
-        int lethal = (row.getNumPersonsKilled() > 0) ? 1 : 0;
-        int week = getWeek(row[DATE]);
-        int month = getMonth(row[DATE]);
-        int year = getYear(row[DATE]);
+        char(*arr)[MAX_CF_LENGTH];
+        arr = (char(*)[MAX_CF_LENGTH])malloc(5 * sizeof(*arr));
+        // arr = new (char(*)[MAX_CF_LENGTH])[5];
+        string key = "diahane";
+        strcpy(arr[1], key.c_str());
 
-        // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
-        // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
-        if (week == 1 && month == 12)
-            year++;
-        else if ((week == 52 || week == 53) && month == 1)
-            year--;
+        cout << arr[1] << endl;
 
-        if (lethal)
-            lethAccPerWeek[year - 2012][week - 1]++;
+        // map<string, int> dictonary;
+        // const char **words;
+        // words = new const char *[5];
+        // words[0] = string("ciao").c_str();
+        // words[1] = "diahane";
+        // words[2] = "come";
+        // words[3] = "stai";
+        // words[4] = "tigre";
+
+        // dictonary = createDictonary(5, words);
+        // for (auto el : dictonary)
+        //     cout << el.first << "\t\t" << el.second << endl;
     }
-
-    int totalWeeks = 0;
-    int totalAccidents = 0;
-
-    for (int year = 0; year < NUM_YEARS; year++)
-    {
-        for (int week = 0; week < NUM_WEEKS_PER_YEAR; week++)
-        {
-            int numLethAcc = lethAccPerWeek[year][week];
-            if (numLethAcc > 0)
-            {
-                cout << "(" << (year + 2012) << ")Week: " << (week + 1) << "\t\t\t Num. lethal accidents: ";
-                cout << numLethAcc << endl;
-                totalAccidents += numLethAcc;
-                totalWeeks++;
-            }
-        }
-    }
-    cout << "Total weeks: " << totalWeeks << "\t\t\tTotal accidents: " << totalAccidents << endl;
+    MPI_Finalize();
 }
