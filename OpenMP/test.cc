@@ -59,46 +59,46 @@ int main()
     /* QUERY 1 */
     /////////////
 
-    // years [2012, 2013, 2014, 2015, 2016, 2017]
-    int lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
+    // // years [2012, 2013, 2014, 2015, 2016, 2017]
+    // int lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
 
-    for (int i = 0; i < csv_size; ++i)
-    {
-        CSVRow row = dataset[i];
-        int lethal = (row.getNumPersonsKilled() > 0) ? 1 : 0;
-        int week = getWeek(row[DATE]);
-        int month = getMonth(row[DATE]);
-        int year = getYear(row[DATE]);
+    // for (int i = 0; i < csv_size; ++i)
+    // {
+    //     CSVRow row = dataset[i];
+    //     int lethal = (row.getNumPersonsKilled() > 0) ? 1 : 0;
+    //     int week = getWeek(row[DATE]);
+    //     int month = getMonth(row[DATE]);
+    //     int year = getYear(row[DATE]);
 
-        // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
-        // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
-        if (week == 1 && month == 12)
-            year++;
-        else if ((week == 52 || week == 53) && month == 1)
-            year--;
+    //     // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
+    //     // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
+    //     if (week == 1 && month == 12)
+    //         year++;
+    //     else if ((week == 52 || week == 53) && month == 1)
+    //         year--;
 
-        if (lethal)
-            lethAccPerWeek[year - 2012][week - 1]++;
-    }
+    //     if (lethal)
+    //         lethAccPerWeek[year - 2012][week - 1]++;
+    // }
 
-    int totalWeeks = 0;
-    int totalAccidents = 0;
+    // int totalWeeks = 0;
+    // int totalAccidents = 0;
 
-    for (int year = 0; year < NUM_YEARS; year++)
-    {
-        for (int week = 0; week < NUM_WEEKS_PER_YEAR; week++)
-        {
-            int numLethAcc = lethAccPerWeek[year][week];
-            if (numLethAcc > 0)
-            {
-                cout << "(" << (year + 2012) << ")Week: " << (week + 1) << "\t\t\t Num. lethal accidents: ";
-                cout << numLethAcc << endl;
-                totalAccidents += numLethAcc;
-                totalWeeks++;
-            }
-        }
-    }
-    cout << "Total weeks: " << totalWeeks << "\t\t\tTotal accidents: " << totalAccidents << endl;
+    // for (int year = 0; year < NUM_YEARS; year++)
+    // {
+    //     for (int week = 0; week < NUM_WEEKS_PER_YEAR; week++)
+    //     {
+    //         int numLethAcc = lethAccPerWeek[year][week];
+    //         if (numLethAcc > 0)
+    //         {
+    //             cout << "(" << (year + 2012) << ")Week: " << (week + 1) << "\t\t\t Num. lethal accidents: ";
+    //             cout << numLethAcc << endl;
+    //             totalAccidents += numLethAcc;
+    //             totalWeeks++;
+    //         }
+    //     }
+    // }
+    // cout << "Total weeks: " << totalWeeks << "\t\t\tTotal accidents: " << totalAccidents << endl;
 
     /////////////
     /* QUERY 2 */
@@ -138,62 +138,62 @@ int main()
     /* QUERY 3 */
     /////////////
 
-    // // pair = { numAccidents, numLethalAccidents }
-    // int numBoroughs = boroughs.size();
-    // pair<int, int> boroughWeekAcc[numBoroughs][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
+    // pair = { numAccidents, numLethalAccidents }
+    int numBoroughs = boroughs.size();
+    pair<int, int> boroughWeekAcc[numBoroughs][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
 
-    // for (int i = 0; i < csv_size; ++i)
-    // {
-    //     CSVRow row = dataset[i];
+    for (int i = 0; i < csv_size; ++i)
+    {
+        CSVRow row = dataset[i];
 
-    //     string borough = row[BOROUGH];
-    //     if (borough.empty()) // if borough is not specified we're not interested
-    //         continue;
+        string borough = row[BOROUGH];
+        if (borough.empty()) // if borough is not specified we're not interested
+            continue;
 
-    //     int lethal = (row.getNumPersonsKilled() > 0) ? 1 : 0;
+        int lethal = (row.getNumPersonsKilled() > 0) ? 1 : 0;
 
-    //     int week = getWeek(row[DATE]);
-    //     int month = getMonth(row[DATE]);
-    //     int year = getYear(row[DATE]);
+        int week = getWeek(row[DATE]);
+        int month = getMonth(row[DATE]);
+        int year = getYear(row[DATE]);
 
-    //     // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
-    //     // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
-    //     if (week == 1 && month == 12)
-    //         year++;
-    //     else if ((week == 52 || week == 53) && month == 1)
-    //         year--;
+        // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
+        // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
+        if (week == 1 && month == 12)
+            year++;
+        else if ((week == 52 || week == 53) && month == 1)
+            year--;
 
-    //     int borIndex = boroughs[borough];
-    //     boroughWeekAcc[borIndex][year - 2012][week - 1].first++;
-    //     boroughWeekAcc[borIndex][year - 2012][week - 1].second += lethal;
-    // }
+        int borIndex = boroughs[borough];
+        boroughWeekAcc[borIndex][year - 2012][week - 1].first++;
+        boroughWeekAcc[borIndex][year - 2012][week - 1].second += lethal;
+    }
 
-    // for (auto b : boroughs) // for each borough
-    // {
-    //     int numWeeks = 0;
-    //     int numAccidents = 0;
-    //     double numLethalAccidents = 0;
+    for (auto b : boroughs) // for each borough
+    {
+        int numWeeks = 0;
+        int numAccidents = 0;
+        double numLethalAccidents = 0;
 
-    //     cout << "Borough: " << b.first << endl;
-    //     for (int i = 0; i < NUM_YEARS; i++) // for each year
-    //     {
-    //         for (int j = 0; j < NUM_WEEKS_PER_YEAR; j++) // for each week
-    //         {
-    //             if (boroughWeekAcc[b.second][i][j].first == 0)
-    //                 continue;
-    //             numWeeks++;
-    //             numAccidents += boroughWeekAcc[b.second][i][j].first;
-    //             numLethalAccidents += boroughWeekAcc[b.second][i][j].second;
+        cout << "Borough: " << b.first << endl;
+        for (int i = 0; i < NUM_YEARS; i++) // for each year
+        {
+            for (int j = 0; j < NUM_WEEKS_PER_YEAR; j++) // for each week
+            {
+                if (boroughWeekAcc[b.second][i][j].first == 0)
+                    continue;
+                numWeeks++;
+                numAccidents += boroughWeekAcc[b.second][i][j].first;
+                numLethalAccidents += boroughWeekAcc[b.second][i][j].second;
 
-    //             cout << "(" << (i + 2012) << ")Week " << (j + 1);                                  // print (Year)Week N
-    //             cout << "\t\t\t num. accidents: " << boroughWeekAcc[b.second][i][j].first << endl; // print numAccidents
-    //         }
-    //     }
-    //     double avg = numLethalAccidents / numWeeks;
-    //     cout << "[" << b.first << "] Avg. lethal accidents per week is: " << setprecision(2) << fixed << avg * 100 << "%";
-    //     cout << "\t\t\tNum. accidents: " << numAccidents << "\t\tNum. lethal accidents: " << setprecision(0) << fixed << numLethalAccidents << endl;
-    //     cout << endl;
-    // }
+                cout << "(" << (i + 2012) << ")Week " << (j + 1);                                  // print (Year)Week N
+                cout << "\t\t\t num. accidents: " << boroughWeekAcc[b.second][i][j].first << endl; // print numAccidents
+            }
+        }
+        double avg = numLethalAccidents / numWeeks;
+        cout << "[" << b.first << "] Avg. lethal accidents per week is: " << setprecision(2) << fixed << avg * 100 << "%";
+        cout << "\t\t\tNum. accidents: " << numAccidents << "\t\tNum. lethal accidents: " << setprecision(0) << fixed << numLethalAccidents << endl;
+        cout << endl;
+    }
 
     /////////////////
     /* OTHER STUFF */
