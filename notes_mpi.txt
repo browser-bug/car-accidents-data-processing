@@ -2,6 +2,9 @@
 General format: 
 	rc = MPI_Xxxxx(parameter, ...)
 
+IMPORTANTE:
+	Qualsiasi struttura dati CONDIVISA dai processi ma modificata/inizializzata da uno solo (es. master) deve essere inviata da quest'ultimi a tutti i restanti solitamente (es. broadcast)
+
 Compiling:
 	mpic++ -o hello hello.cc
 	mpirun [-oversubscribe]
