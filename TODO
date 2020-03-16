@@ -5,22 +5,6 @@ IMPORTANTE:
   - Quando sono utilizzate le mappe ricordarsi che l'operatore [] se l'elemento non è presente va sempre ad inserire un nuovo elemento con la chiave designata e con rispettivo valore inizializzato (es. se è un intero viene messo a 0)
   - The arrays allocated in this way aren't linear in memory, and cannot be used by the MPI functions globally. When you pass C, you are passing just the array of pointers. Passing &C[0][0], you are passing the array of the first 3 elements, but the other 3-elements-arrays aren't contiguous in memory, since they've been allocated independently. So a segfault is the best that you can achieve, being random results, the worst.
 
-  // Broadcast the number of unique contributing factors to all processes
-  MPI_Bcast(&num_cf, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  if (myrank != 0)
-      cfUniqueList = new const char *[num_cf];
-
-  // Broadcast the list of unique contributing factors to all processes
-  MPI_Bcast(cfUniqueList, num_cf * sizeof(const char *), MPI_CHAR, 0, MPI_COMM_WORLD);
-
-  // Populate the CF dictonary for all the other processes
-  if (myrank != 0)
-      cfDictionary = createDictonary(num_cf, cfUniqueList);
-
-  cout << "MyRank[" << myrank << "]\n";
-  for (auto el : cfDictionary)
-      cout << el.first << "\t\t" << el.second << endl;
-
 Todo:
   
   ✔ Capire perchè non CSVRow.cpp non vede le reference a CSVRow.h con code runner @started(20-02-26 23:35) @done(20-03-01 13:07) @lasted(3d13h32m53s)
@@ -59,19 +43,28 @@ Todo:
      ✔ Fixa il parsing delle righe nel caso in cui si abbia una stringa quotata @started(20-02-29 02:51) @done(20-02-29 10:45) @lasted(7h54m)
       E.s. "IF/O 519 GATEWAY DRIVE,BROOKLYN,NY 11239"  
 
-    ☐ IMPORTANTE: quando sono utilizzate le mappe ricordarsi che l'operatore [] se l'elemento non è presente va sempre ad inserire un nuovo elemento con la chiave designata e con rispettivo valore inizializzato (es. se è un intero viene messo a 0) @started(20-03-13 22:53)
-
-    ☐ Provare a testare se sia possibile integrare MPI/OpenMP oppure serva qualcosa di più "raw" @started(20-02-27 18:22)
+      
+      ✔ Provare a testare se sia possibile integrare MPI/OpenMP oppure serva qualcosa di più "raw" @started(20-02-27 18:22) @done(20-03-16 15:35) @lasted(2w3d21h13m1s)
       Leggendo online l'unica datastructure (oltre ovviamente agli array in C) che supporta MPI/OpenMP (o almeno la versione d'utilizzo) è il vector facendo però attenzione che tutte le azioni che implicano un resize (e.s. push_back()) non sono thread-safe!
       
-    ☐ Valutare la creazione di una struct personalizzata con MPI dove mettere tutti i dati necessari per le tre query in fase di loading @started(20-03-12 01:37)
-    
-    ☐ Modulare il codice creando funzioni d'appoggio per avere un codice più pulito e poter distribuire meglio i vari sotto processi @started(20-03-12 11:33)
-    
-    ☐ Aggiungere al codice dell'error handling (es MPI_SUCCESS returns etc.) @started(20-03-12 01:40)
+      ✔ Valutare la creazione di una struct personalizzata con MPI dove mettere tutti i dati necessari per le tre query in fase di loading @started(20-03-12 01:37) @done(20-03-16 15:35) @lasted(4d13h58m5s)
+      
+      ☐ Controllare che l'introduzione di openMP sia ottimale e non ci siano modi più smart @started(20-03-16 15:36)
+      
+      ☐ Aggiungere la parte di statistica. @started(20-03-16 15:37)
+        Dobbiamo misurare i tempi d'inizio e fine di ogni sotto processo, in particolare della fase di loading, di processing e di stampa dei risultati.
+        ☐ Valutare se convenga o meno utilizzare MPI_Wtime() a tal fine 
 
-    ☐ Trovare una buona libreria per plottare l'istogramma dei dati raccolti. Verrebbe una cosa carina da affiancare alle statistiche temporali @started(20-02-27 18:21)
-    
+      ☐ Modulare il codice creando funzioni d'appoggio o anche nuove classi per avere un codice più pulito e poter distribuire meglio i vari sotto processi @started(20-03-12 11:33)
+
+      ☐ Verificare se sia possibile spostare i processi su più macchine (MPI) @started(20-03-16 15:41)
+      
+      
+Minors:
+      ☐ Aggiungere al codice dell'error handling (es MPI_SUCCESS returns etc.) @started(20-03-12 01:40)
+  
+      ☐ Trovare una buona libreria per plottare l'istogramma dei dati raccolti. Verrebbe una cosa carina da affiancare alle statistiche temporali @started(20-02-27 18:21)
+      
 Additional informations:
   -  https://stackoverflow.com/questions/10766263/message-passing-interface-on-shared-memory-systems-performance
   Let's assume we only consider MPI and OpenMP, since they are the two major representatives of the two parallel programming families you mention. For distributed systems, MPI is the only option between different nodes. Within a single node, however, as you well say, you can still use MPI and use OpenMP too. Which one will perform better really depends on the application you are running, and specifically in its computation/communication ratio. Here you can see a comparison of MPI and OpenMP for a multicore processor, where they confirm the same observation.

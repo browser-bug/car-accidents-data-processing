@@ -108,7 +108,7 @@ OpenMP Notes:
 	AFTER EXITING THE TEAM SECTION THE VARIABLE HAS THE SAME VALUE IT HAS BEEN INITIALIZED WITH.
 	
 	- shared (list) : this is shared among all threads in the team and it exists only in one memory location and all threads can read or write that address. Concurrency control is needed! 
-	IF ARRAY IS STATIC (a[10]) it will be passed by copy. IF ARRAY IS DYNAMIC (vector<int> vec) it will be passed is pointer.
+	IF ARRAY IS STATIC (a[10]) it will be passed by copy. IF ARRAY IS DYNAMIC (vector<int> vec) it will be passed its pointer.
 	#pragma omp parallel shared(a)
 
 	- default (shared | none) : default scope of ALL VARIABLES IN THE LEXICAL EXTENT OF ANY PARALLEL REGION is either set to shared or none. 
