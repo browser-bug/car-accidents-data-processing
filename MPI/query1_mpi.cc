@@ -39,7 +39,7 @@ using namespace std;
 int main(int argc, char **argv)
 {
     bool testing = false; // switch between dataset for testing and original dataset
-    int err;              // used for MPI error messages
+    // int err;              // used for MPI error messages
 
     string csv_path = testing ? "../dataset/data_test.csv" : "../dataset/NYPD_Motor_Vehicle_Collisions.csv";
     ifstream file(csv_path);
@@ -122,12 +122,7 @@ int main(int argc, char **argv)
         }
     }
 
-    err = MPI_Scatterv(dataScatter.data(), scatterCount, dataDispl, rowType, localRows.data(), my_num_rows, rowType, 0, MPI_COMM_WORLD);
-    if (err != MPI_SUCCESS)
-    {
-        cout << "Scattering failed with error code " << err;
-        exit(0);
-    }
+    MPI_Scatterv(dataScatter.data(), scatterCount, dataDispl, rowType, localRows.data(), my_num_rows, rowType, 0, MPI_COMM_WORLD);
 
     /////////////
     /* QUERY 1 */

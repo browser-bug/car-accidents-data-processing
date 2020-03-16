@@ -87,17 +87,11 @@ int main(int argc, char **argv)
     int *cfValues;                // this contains all cf values in the dataset
     int num_cf;
 
-    int indexB = 0;
-    map<string, int> boroughs;
-
     // LOADING THE DATASET
     int csv_size = testing ? TEST_SIZE : ORIGINAL_SIZE;
     // csv_size = 4; // Set the first N rows to be read
     int myrank, num_workers;
 
-    // years [2012, 2013, 2014, 2015, 2016, 2017]
-    // Global data structure for QUERY1
-    int global_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
     // Global data structure for QUERY2
     AccPair global_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};
 
@@ -163,8 +157,6 @@ int main(int argc, char **argv)
     int my_num_rows;
     int my_row_displ;
 
-    // Local data structure for QUERY1
-    int local_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
     // Local data structure for QUERY2
     AccPair local_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};
 
@@ -211,7 +203,7 @@ int main(int argc, char **argv)
             dataScatter.push_back(
                 Row(getWeek(date), getMonth(date), getYear(date), row.getNumPersonsKilled(), 0));
             vector<string> cfs = row.getContributingFactors();
-            for (int k = 0; k < cfs.size(); k++)
+            for (unsigned int k = 0; k < cfs.size(); k++)
             {
                 strcpy(dataScatter[i].contributing_factors[k], cfs[k].c_str());
                 dataScatter[i].num_contributing_factors++;
@@ -227,11 +219,6 @@ int main(int argc, char **argv)
             //      << " first contributing_factor [" << dataScatter[i].contributing_factors[0] << "]"
             //      << " num cf " << dataScatter[i].num_contributing_factors
             //      << endl;
-
-            // Populating dictonary for QUERY3
-            string b = row[BOROUGH];
-            if (!b.empty() && b.compare("Unspecified") && boroughs.find(b) == boroughs.end())
-                boroughs.insert({b, indexB++});
         }
     }
 
@@ -276,8 +263,6 @@ int main(int argc, char **argv)
     for (int i = 0; i < my_num_rows; i++)
     {
         // cout << "WorkerID: " << myrank << " num CF. " << localRows[i].num_contributing_factors << endl;
-        if (localRows[i].num_contributing_factors == 0)
-            continue;
 
         // int lethal = (localRows[i].num_pers_killed > 0) ? 1 : 0;
         for (int k = 0; k < localRows[i].num_contributing_factors; k++)
@@ -308,6 +293,9 @@ int main(int argc, char **argv)
         }
         cout << "Total CF parsed: " << cfDictionary.size();
     }
+
+    delete[] cfKeys;
+    delete[] cfValues;
 
     MPI_Finalize();
 }

@@ -71,26 +71,15 @@ int main(int argc, char **argv)
 
     if (myrank == 0)
     {
-        char(*arr)[MAX_CF_LENGTH];
-        arr = (char(*)[MAX_CF_LENGTH])malloc(5 * sizeof(*arr));
-        // arr = new (char(*)[MAX_CF_LENGTH])[5];
-        string key = "diahane";
-        strcpy(arr[1], key.c_str());
 
-        cout << arr[1] << endl;
+        char borough[15] = {};
+        string s = "MANHATTAN";
+        strncpy(borough, s.c_str(), 15);
 
-        // map<string, int> dictonary;
-        // const char **words;
-        // words = new const char *[5];
-        // words[0] = string("ciao").c_str();
-        // words[1] = "diahane";
-        // words[2] = "come";
-        // words[3] = "stai";
-        // words[4] = "tigre";
+        for (int i = 0; i < 15; i++)
+            cout << borough[i] << endl;
 
-        // dictonary = createDictonary(5, words);
-        // for (auto el : dictonary)
-        //     cout << el.first << "\t\t" << el.second << endl;
+        cout << boroughDictionary.at(borough);
     }
     MPI_Finalize();
 }
