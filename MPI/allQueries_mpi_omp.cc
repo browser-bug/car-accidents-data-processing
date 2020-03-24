@@ -1,4 +1,5 @@
 #include <mpi.h>
+#include <omp.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -81,11 +82,16 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
+    // if (argc != 2)
+    // {
+    //     cout << "Usage: " << argv[0] << " <num_omp_threads>" << endl;
+    //     exit(-1);
+    // }
+    int num_omp_threads = 4; // TODO this will be assigned by user input
+    // num_omp_threads = stoi(argv[1]);
+
     bool testing = false; // switch between dataset for testing and original dataset
     // int err;              // used for MPI error messages
-
-    string csv_path = testing ? "../dataset/data_test.csv" : "../dataset/NYPD_Motor_Vehicle_Collisions.csv";
-    ifstream file(csv_path);
 
     // Support dictonaries
     int indexCF = 0;
@@ -100,18 +106,24 @@ int main(int argc, char **argv)
     int *brghValues;                     // this contains all borough values in the dataset
     int num_brgh;
 
-    // LOADING THE DATASET
+    // Load dataset variables
+    // TODO : maybe the csv_size can be specified at runtime by user
     int csv_size = testing ? TEST_SIZE : ORIGINAL_SIZE;
     // csv_size = 29996; // Set the first N rows to be read
-    int myrank, num_workers;
+    const string dataset_path = "../dataset/";
+    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "NYPD_Motor_Vehicle_Collisions.csv";
 
-    // years [2012, 2013, 2014, 2015, 2016, 2017]
-    // Global data structure for QUERY1
-    int global_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
-    // Global data structure for QUERY2
-    AccPair global_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};
-    // Global data structure for QUERY3
-    AccPair global_boroughWeekAc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
+    // MPI variables
+    int myrank, num_workers;
+    double *overallTimes; // these contain time stats for each process (e.g. overallTimes[3] -> overall duration time of rank = 3 process)
+    double *loadTimes;
+    double *scatterTimes;
+    double *procTimes;
+    double *writeTimes;
+
+    int global_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                 // Global data structure for QUERY1
+    AccPair global_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                      // Global data structure for QUERY2
+    AccPair global_boroughWeekAc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Global data structure for QUERY3
 
     // MPI Datatypes definitions
     MPI_Datatype rowType;
@@ -133,7 +145,8 @@ int main(int argc, char **argv)
         offsetof(Row, borough)};
     MPI_Datatype rowTypes[] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_CHAR, MPI_INT, MPI_CHAR};
 
-    MPI_Datatype accPairType;
+    // FIX this is no longer needed as MPI provides the MPI_2INT datatype
+    // MPI_Datatype accPairType;
 
     // MPI Operators definitions
     MPI_Op accPairSum;
@@ -157,8 +170,9 @@ int main(int argc, char **argv)
 
     MPI_Type_create_struct(7, rowLength, rowDisplacements, rowTypes, &rowType);
     MPI_Type_commit(&rowType);
-    MPI_Type_contiguous(2, MPI_INT, &accPairType);
-    MPI_Type_commit(&accPairType);
+    // FIX this is no longer needed as MPI provides the MPI_2INT datatype
+    // MPI_Type_contiguous(2, MPI_INT, &accPairType);
+    // MPI_Type_commit(&accPairType);
 
     MPI_Op_create(pairSum, true, &accPairSum);
 
@@ -170,14 +184,32 @@ int main(int argc, char **argv)
     int my_num_rows;
     int my_row_displ;
 
-    // Local data structure for QUERY1
-    int local_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
-    // Local data structure for QUERY2
-    AccPair local_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};
-    // Local data structure for QUERY3
-    AccPair local_boroughWeekAcc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
+    // Timing stats variables
+    double overallBegin, overallDuration; // overall application duration time
+    double loadBegin, loadDuration;       // loading phase duration time
+    double scatterBegin, scatterDuration; // scattering phase duration time
+    double procBegin, procDuration;       // processing phase duration time
+    double writeBegin, writeDuration;     // printing stats duration time
+
+    int local_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                  // Local data structure for QUERY1
+    AccPair local_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                       // Local data structure for QUERY2
+    AccPair local_boroughWeekAcc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Local data structure for QUERY3
+
+    // Initialization for timing statistics
+    if (myrank == 0)
+    {
+        overallTimes = new double[num_workers]();
+        loadTimes = new double[num_workers]();
+        scatterTimes = new double[num_workers]();
+        procTimes = new double[num_workers]();
+        writeTimes = new double[num_workers]();
+    }
+
+    overallBegin = cpuSecond();
 
     // Initialization for scattering, evenly dividing dataset
+    scatterBegin = cpuSecond();
+
     if (myrank == 0)
     {
         scatterCount[myrank] = csv_size / num_workers + csv_size % num_workers; // TODO maybe change this so master process doesn't get overloaded with too many rows
@@ -203,10 +235,15 @@ int main(int argc, char **argv)
         MPI_Recv(&my_row_displ, 1, MPI_INT, 0, 14, MPI_COMM_WORLD, NULL);
     }
 
+    scatterDuration = cpuSecond() - scatterBegin;
+
+    // [1] Loading data from file
+    loadBegin = cpuSecond();
+
     if (myrank == 0)
     {
+        ifstream file(csv_path);
         CSVRow row;
-
         for (int i = 0; i < csv_size; i++)
         {
             if (i == 0)
@@ -241,6 +278,12 @@ int main(int argc, char **argv)
             }
         }
     }
+
+    loadDuration = cpuSecond() - loadBegin;
+    MPI_Gather(&loadDuration, 1, MPI_DOUBLE, loadTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // Broadcasting the dictionaries to all processes
+    scatterBegin = cpuSecond();
 
     if (myrank == 0)
     {
@@ -289,12 +332,14 @@ int main(int argc, char **argv)
     localRows.resize(my_num_rows);
     MPI_Scatterv(dataScatter.data(), scatterCount, dataDispl, rowType, localRows.data(), my_num_rows, rowType, 0, MPI_COMM_WORLD);
 
-////////////////
-/* PROCESSING */
-////////////////
+    scatterDuration += cpuSecond() - scatterBegin;
+    MPI_Gather(&scatterDuration, 1, MPI_DOUBLE, scatterTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // [2] Data processing
+    procBegin = cpuSecond();
 
 // Every worker will compute in the final datastructure the num of lethal accidents for its sub-dataset and then Reduce it to allow the master to collect final results
-#pragma omp parallel for shared(local_lethAccPerWeek, local_accAndPerc, local_boroughWeekAcc) num_threads(8)
+#pragma omp parallel for shared(local_lethAccPerWeek, local_accAndPerc, local_boroughWeekAcc) num_threads(num_omp_threads)
     for (int i = 0; i < my_num_rows; i++)
     {
         int year, week = 0; // used for indexing final data structure
@@ -341,9 +386,15 @@ int main(int argc, char **argv)
     // Query1
     MPI_Reduce(local_lethAccPerWeek, global_lethAccPerWeek, (NUM_YEARS * NUM_WEEKS_PER_YEAR), MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     // Query2
-    MPI_Reduce(local_accAndPerc, global_accAndPerc, NUM_CONTRIBUTING_FACTORS, accPairType, accPairSum, 0, MPI_COMM_WORLD);
+    MPI_Reduce(local_accAndPerc, global_accAndPerc, NUM_CONTRIBUTING_FACTORS, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
     // Query3
-    MPI_Reduce(local_boroughWeekAcc, global_boroughWeekAc, NUM_BOROUGH * NUM_YEARS * NUM_WEEKS_PER_YEAR, accPairType, accPairSum, 0, MPI_COMM_WORLD);
+    MPI_Reduce(local_boroughWeekAcc, global_boroughWeekAc, NUM_BOROUGH * NUM_YEARS * NUM_WEEKS_PER_YEAR, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
+
+    procDuration = cpuSecond() - procBegin;
+    MPI_Gather(&procDuration, 1, MPI_DOUBLE, procTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // [3] Output results
+    writeBegin = cpuSecond();
 
     if (myrank == 0)
     {
@@ -375,7 +426,7 @@ int main(int argc, char **argv)
             double perc = double(global_accAndPerc[el.second].numLethalAccidents) / global_accAndPerc[el.second].numAccidents;
             cout << el.first << endl
                  << "\t\tNum. of accidents: " << global_accAndPerc[el.second].numAccidents
-                 << "\t\t\t\t\tPerc. lethal accidents: " << setprecision(2) << fixed << perc * 100 << "%"
+                 << "\t\t\t\t\tPerc. lethal accidents: " << setprecision(4) << fixed << perc * 100 << "%"
                  << endl;
         }
         cout << "Total CF parsed: " << cfDictionary.size() << "\n\n\n";
@@ -408,13 +459,60 @@ int main(int argc, char **argv)
             cout << "\t\t\tNum. accidents: " << numAccidents << "\t\tNum. lethal accidents: " << setprecision(0) << fixed << numLethalAccidents << endl;
             cout << endl;
         }
-        cout << "Total boroughs parsed: " << brghDictionary.size();
+        cout << "Total boroughs parsed: " << brghDictionary.size() << "\n\n\n";
+    }
+
+    writeDuration = cpuSecond() - writeBegin;
+    MPI_Gather(&writeDuration, 1, MPI_DOUBLE, writeTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    overallDuration = cpuSecond() - overallBegin;
+    MPI_Gather(&overallDuration, 1, MPI_DOUBLE, overallTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // Print statistics
+    if (myrank == 0)
+    {
+        cout << fixed << setprecision(8) << endl;
+        cout << "********* Timing Statistics *********" << endl;
+        cout << "NUM. MPI PROCESSES:\t" << num_workers << endl;
+        cout << "NUM. OMP THREADS:\t" << num_omp_threads << endl;
+
+        double avgOverall, avgLoading, avgProcessing, avgWriting = 0;
+        for (int i = 0; i < num_workers; i++)
+        {
+            cout << "Process {" << i << "}\t";
+            if (i == 0)
+                cout << "Loading(" << loadTimes[i] << "), ";
+            cout << "Scattering(" << scatterTimes[i] << "), ";
+            cout << "Processing(" << procTimes[i] << "), ";
+            if (i == 0)
+                cout << "Writing(" << writeTimes[i] << "), ";
+            cout << "took overall " << overallTimes[i] << " seconds" << endl;
+
+            avgOverall += overallTimes[i];
+            avgLoading += loadTimes[i];
+            avgProcessing += procTimes[i];
+            avgWriting += writeTimes[i];
+        }
+        cout << endl
+             << "With average times of: "
+             //  << "[1] Loading(" << avgLoading / num_workers << "), "
+             << "[2] Processing(" << avgProcessing / num_workers << "), "
+             //  << "[3] Writing(" << avgWriting / num_workers << ") and \t"
+             << "overall(" << avgOverall / num_workers << ").\n";
     }
 
     delete[] cfKeys;
     delete[] cfValues;
     delete[] brghKeys;
     delete[] brghValues;
+
+    if (myrank == 0)
+    {
+        delete[] overallTimes;
+        delete[] loadTimes;
+        delete[] procTimes;
+        delete[] writeTimes;
+    }
 
     MPI_Finalize();
 }
