@@ -88,6 +88,37 @@ void CSVRow::readNextRow(istream &str)
     }
 }
 
+void CSVRow::readRowFromString(string line)
+{
+    stringstream lineStream(line);
+    string field, pushField("");
+    bool no_quotes = true;
+
+    m_data.clear();
+    // Fixed a parsing error when meeting quoted fields thanks to https://stackoverflow.com/a/48086659/4442337
+    while (getline(lineStream, field, ','))
+    {
+        if (static_cast<size_t>(count(field.begin(), field.end(), '"')) % 2 != 0)
+        {
+            no_quotes = !no_quotes;
+        }
+
+        pushField += field + (no_quotes ? "" : ",");
+
+        if (no_quotes)
+        {
+            m_data.push_back(pushField);
+            pushField.clear();
+        }
+    }
+    // This checks for a trailing comma with no data after it.
+    if (!lineStream && field.empty())
+    {
+        // If there was a trailing comma then add an empty element.
+        m_data.push_back("");
+    }
+}
+
 istream &operator>>(istream &str, CSVRow &data)
 {
     data.readNextRow(str);

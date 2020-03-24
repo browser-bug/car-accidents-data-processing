@@ -21,6 +21,7 @@ public:
     std::vector<std::string> getContributingFactors(); /* Returns disting contributing factors in alphabetical order */
     void print() const;
     void readNextRow(std::istream &str);
+    void readRowFromString(std::string line);
 
     std::string const &operator[](std::size_t index) const
     {
@@ -30,6 +31,11 @@ public:
     std::size_t size() const
     {
         return m_data.size();
+    }
+
+    std::vector<std::string> getData()
+    {
+        return m_data;
     }
 
 private:
