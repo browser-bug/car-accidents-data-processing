@@ -49,12 +49,22 @@ Todo:
       
       ✔ Valutare la creazione di una struct personalizzata con MPI dove mettere tutti i dati necessari per le tre query in fase di loading @started(20-03-12 01:37) @done(20-03-16 15:35) @lasted(4d13h58m5s)
       
+      ✔ Lettura dello stesso file da più processi utilizzando MPI_IO() @started(20-03-21 19:32) @done(20-03-21 19:32) @lasted(51s)
+
+      ☐ I buffers per le query sono tutti statici. C'è il modo di rendergli dinamici? @started(20-03-22 11:18)
+
       ☐ Controllare che l'introduzione di openMP sia ottimale e non ci siano modi più smart @started(20-03-16 15:36)
       
       ☐ Aggiungere la parte di statistica. @started(20-03-16 15:37)
         Dobbiamo misurare i tempi d'inizio e fine di ogni sotto processo, in particolare della fase di loading, di processing e di stampa dei risultati.
-        ☐ Valutare se convenga o meno utilizzare MPI_Wtime() a tal fine 
+        ✔ Valutare se convenga o meno utilizzare MPI_Wtime() a tal fine @done(20-03-18 22:39)
+          Funziona perfettamente anche usando semplicemente cpu_seconds().
 
+        ✔ Parametrizzare il numero di OpenMP threads e il numero di MPI processes  @started(20-03-18 22:42) @done(20-03-19 11:58) @lasted(13h16m1s)
+          Vogliamo tunare questi parametri per trovare quelli che ci forniscono il tempo d'esecuzione migliore. Più semplicemente vogliamo fare un'analisi di scalabilità andando ad aumentare il numero di nodi a seconda dei valori assunti da questi paramentri.
+          ☐ Introducendo i due parametri direttamente dal terminale (quindi user input) è l'opzione migliore.
+            ./allQueries_mpi_omp.o -np <num_mpi_processes> <num_omp_threads>
+      
       ☐ Modulare il codice creando funzioni d'appoggio o anche nuove classi per avere un codice più pulito e poter distribuire meglio i vari sotto processi @started(20-03-12 11:33)
 
       ☐ Verificare se sia possibile spostare i processi su più macchine (MPI) @started(20-03-16 15:41)
