@@ -41,16 +41,16 @@ enum CSV_INDEXES
 };
 
 /* Boroughs Dictionary */
-/* const std::map<std::string, int> boroughDictionary =
+const std::map<std::string, int> static_brghDictionary =
     {
         {"MANHATTAN", 0},
         {"QUEENS", 1},
         {"BRONX", 2},
         {"BROOKLYN", 3},
-        {"STATEN ISLAND", 4}}; */
+        {"STATEN ISLAND", 4}};
 
 /* Contributing Factors Dictionary */
-/* const std::map<std::string, int> cfDictionary =
+const std::map<std::string, int> static_cfDictionary =
     {
         {"Accelerator Defective", 33},
         {"Aggressive Driving/Road Rage", 27},
@@ -99,7 +99,6 @@ enum CSV_INDEXES
         {"Unsafe Speed", 31},
         {"View Obstructed/Limited", 23},
         {"Windshield Inadequate", 45}};
- */
 
 /* 
 The core structure of the getWeek function code comes from the Codeproject Network.
