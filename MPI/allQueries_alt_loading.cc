@@ -348,15 +348,15 @@ int main(int argc, char **argv)
     {
         for (int rank = 1; rank < num_workers; rank++)
         {
-            MPI_Recv(&my_num_cf, 1, MPI_INT, rank, 12, MPI_COMM_WORLD, NULL);
+            MPI_Recv(&my_num_cf, 1, MPI_INT, rank, 12, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             cfKeys = (char(*)[MAX_CF_LENGTH])malloc(my_num_cf * sizeof(*cfKeys));
-            MPI_Recv(cfKeys, my_num_cf * MAX_CF_LENGTH, MPI_CHAR, rank, 12, MPI_COMM_WORLD, NULL);
+            MPI_Recv(cfKeys, my_num_cf * MAX_CF_LENGTH, MPI_CHAR, rank, 12, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int i = 0; i < my_num_cf; i++)
                 cfDictionary.insert({cfKeys[i], indexCF++});
 
-            MPI_Recv(&my_num_brgh, 1, MPI_INT, rank, 13, MPI_COMM_WORLD, NULL);
+            MPI_Recv(&my_num_brgh, 1, MPI_INT, rank, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             brghKeys = (char(*)[MAX_BOROUGH_LENGTH])malloc(my_num_brgh * sizeof(*brghKeys));
-            MPI_Recv(brghKeys, my_num_brgh * MAX_BOROUGH_LENGTH, MPI_CHAR, rank, 13, MPI_COMM_WORLD, NULL);
+            MPI_Recv(brghKeys, my_num_brgh * MAX_BOROUGH_LENGTH, MPI_CHAR, rank, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int i = 0; i < my_num_brgh; i++)
                 brghDictionary.insert({brghKeys[i], indexBrgh++});
 
