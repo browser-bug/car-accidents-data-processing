@@ -10,6 +10,7 @@
 #include <string>
 #include <string.h> // for string copy
 #include <unistd.h> // for debugging
+#include <cstddef>
 
 #include "../utilities/CSVIterator.h"
 
