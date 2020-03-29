@@ -13,6 +13,7 @@ Author: Martin York https://stackoverflow.com/users/14065/martin-york
 #include <algorithm>
 #include <vector>
 #include <string>
+#include <sstream>
 
 class CSVRow
 {
