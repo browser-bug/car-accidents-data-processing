@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <string>
 #include <string.h> // for string copy
+#include <cstddef>
 
 #include "../utilities/CSVIterator.h"
 
