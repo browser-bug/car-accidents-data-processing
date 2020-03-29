@@ -7,6 +7,7 @@
 #include <list>
 #include <algorithm>
 #include <string>
+#include <cstddef>
 
 #include "../utilities/CSVIterator.h"
 
