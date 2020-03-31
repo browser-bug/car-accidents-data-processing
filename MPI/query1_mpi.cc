@@ -42,21 +42,30 @@ int main(int argc, char **argv)
     bool testing = false; // switch between dataset for testing and original dataset
     // int err;              // used for MPI error messages
 
-    string csv_path = testing ? "../dataset/data_test.csv" : "../dataset/NYPD_Motor_Vehicle_Collisions.csv";
-    ifstream file(csv_path);
-
-    // LOADING THE DATASET
+    // Load dataset variables
     int csv_size = testing ? TEST_SIZE : ORIGINAL_SIZE;
-    int myrank, num_workers;
+    const string dataset_path = "../dataset/";
+    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "NYPD_Motor_Vehicle_Collisions.csv";
 
-    // years [2012, 2013, 2014, 2015, 2016, 2017]
-    int lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
+    // MPI variables
+    int myrank, num_workers;
+    double *overallTimes; // these contain time stats for each process (e.g. overallTimes[3] -> overall duration time of rank = 3 process)
+    double *loadTimes;
+    double *scatterTimes;
+    double *procTimes;
+    double *writeTimes;
+
+    int global_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
 
     // MPI Datatype creation
     MPI_Datatype rowType;
     int rowLength[4] = {1, 1, 1, 1};
-    MPI_Aint rowDisplacements[4] = {offsetof(Row, week), offsetof(Row, month), offsetof(Row, year), offsetof(Row, num_pers_killed)};
-    MPI_Datatype rowTypes[4] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT};
+    MPI_Aint rowDisplacements[] = {
+        offsetof(Row, week),
+        offsetof(Row, month),
+        offsetof(Row, year),
+        offsetof(Row, num_pers_killed)};
+    MPI_Datatype rowTypes[] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT};
 
     MPI_Init(&argc, &argv);
 
@@ -64,6 +73,10 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 
+    MPI_Type_create_struct(4, rowLength, rowDisplacements, rowTypes, &rowType);
+    MPI_Type_commit(&rowType);
+
+    // Local data structure for QUERY1
     vector<Row> dataScatter;
     vector<Row> localRows;
     int scatterCount[num_workers];
@@ -71,13 +84,30 @@ int main(int argc, char **argv)
     int my_num_rows;
     int my_row_displ;
 
-    // Local data structure for QUERY1
     int local_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};
 
-    MPI_Type_create_struct(4, rowLength, rowDisplacements, rowTypes, &rowType);
-    MPI_Type_commit(&rowType);
+    // Timing stats variables
+    double overallBegin, overallDuration; // overall application duration time
+    double loadBegin, loadDuration;       // loading phase duration time
+    double scatterBegin, scatterDuration; // scattering phase duration time
+    double procBegin, procDuration;       // processing phase duration time
+    double writeBegin, writeDuration;     // printing stats duration time
+
+    // Initialization for timing statistics
+    if (myrank == 0)
+    {
+        overallTimes = new double[num_workers]();
+        loadTimes = new double[num_workers]();
+        scatterTimes = new double[num_workers]();
+        procTimes = new double[num_workers]();
+        writeTimes = new double[num_workers]();
+    }
+
+    overallBegin = cpuSecond();
 
     // Initialization for scattering, evenly dividing dataset
+    scatterBegin = cpuSecond();
+
     if (myrank == 0)
     {
         scatterCount[myrank] = csv_size / num_workers + csv_size % num_workers; // TODO maybe change this so master process doesn't get overloaded with too many rows
@@ -103,11 +133,15 @@ int main(int argc, char **argv)
         MPI_Recv(&my_row_displ, 1, MPI_INT, 0, 14, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 
-    localRows.resize(my_num_rows);
+    scatterDuration = cpuSecond() - scatterBegin;
+
+    // [1] Loading data from file
+    loadBegin = cpuSecond();
 
     if (myrank == 0)
     {
         CSVRow row;
+        ifstream file(csv_path);
 
         for (int i = 0; i < csv_size; i++)
         {
@@ -123,11 +157,17 @@ int main(int argc, char **argv)
         }
     }
 
+    loadDuration = cpuSecond() - loadBegin;
+    MPI_Gather(&loadDuration, 1, MPI_DOUBLE, loadTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    localRows.resize(my_num_rows);
     MPI_Scatterv(dataScatter.data(), scatterCount, dataDispl, rowType, localRows.data(), my_num_rows, rowType, 0, MPI_COMM_WORLD);
 
-    /////////////
-    /* QUERY 1 */
-    /////////////
+    scatterDuration += cpuSecond() - scatterBegin;
+    MPI_Gather(&scatterDuration, 1, MPI_DOUBLE, scatterTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // [2] Data processing
+    procBegin = cpuSecond();
 
     // Every worker will compute in the final datastructure the num of lethal accidents for its sub-dataset and then Reduce it to allow the master to collect final results
     for (int i = 0; i < my_num_rows; i++)
@@ -150,11 +190,18 @@ int main(int argc, char **argv)
         // cout << "WorkerID: " << myrank << "\t\tnum_pers_killed: " << local_lethAccPerWeek[year][week] << endl;
     }
 
-    MPI_Reduce(local_lethAccPerWeek, lethAccPerWeek, (NUM_YEARS * NUM_WEEKS_PER_YEAR), MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(local_lethAccPerWeek, global_lethAccPerWeek, (NUM_YEARS * NUM_WEEKS_PER_YEAR), MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    procDuration = cpuSecond() - procBegin;
+    MPI_Gather(&procDuration, 1, MPI_DOUBLE, procTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // [3] Output results
+    writeBegin = cpuSecond();
 
     if (myrank == 0)
     {
-        // Print results
+        // Print Query1 results
+        cout << "********* QUERY 1 *********" << endl;
         int totalWeeks = 0;
         int totalAccidents = 0;
 
@@ -162,7 +209,7 @@ int main(int argc, char **argv)
         {
             for (int week = 0; week < NUM_WEEKS_PER_YEAR; week++)
             {
-                int numLethAcc = lethAccPerWeek[year][week];
+                int numLethAcc = global_lethAccPerWeek[year][week];
                 if (numLethAcc > 0)
                 {
                     cout << "(" << (year + 2012) << ")Week: " << (week + 1) << "\t\t\t Num. lethal accidents: ";
@@ -172,7 +219,53 @@ int main(int argc, char **argv)
                 }
             }
         }
-        cout << "Total weeks: " << totalWeeks << "\t\t\tTotal accidents: " << totalAccidents << endl;
+        cout << "Total weeks: " << totalWeeks << "\t\t\tTotal accidents: " << totalAccidents << "\n\n\n";
+    }
+
+    writeDuration = cpuSecond() - writeBegin;
+    MPI_Gather(&writeDuration, 1, MPI_DOUBLE, writeTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    overallDuration = cpuSecond() - overallBegin;
+    MPI_Gather(&overallDuration, 1, MPI_DOUBLE, overallTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // Print statistics
+    if (myrank == 0)
+    {
+        cout << fixed << setprecision(8) << endl;
+        cout << "********* Timing Statistics *********" << endl;
+        cout << "NUM. MPI PROCESSES:\t" << num_workers << endl;
+
+        double avgOverall, avgLoading, avgProcessing, avgWriting = 0;
+        for (int i = 0; i < num_workers; i++)
+        {
+            cout << "Process {" << i << "}\t";
+            if (i == 0)
+                cout << "Loading(" << loadTimes[i] << "), ";
+            cout << "Scattering(" << scatterTimes[i] << "), ";
+            cout << "Processing(" << procTimes[i] << "), ";
+            if (i == 0)
+                cout << "Writing(" << writeTimes[i] << "), ";
+            cout << "took overall " << overallTimes[i] << " seconds" << endl;
+
+            avgOverall += overallTimes[i];
+            avgLoading += loadTimes[i];
+            avgProcessing += procTimes[i];
+            avgWriting += writeTimes[i];
+        }
+        cout << endl
+             << "With average times of: "
+             //  << "[1] Loading(" << avgLoading / num_workers << "), "
+             << "[2] Processing(" << avgProcessing / num_workers << "), "
+             //  << "[3] Writing(" << avgWriting / num_workers << ") and \t"
+             << "overall(" << avgOverall / num_workers << ").\n";
+    }
+
+    if (myrank == 0)
+    {
+        delete[] overallTimes;
+        delete[] loadTimes;
+        delete[] procTimes;
+        delete[] writeTimes;
     }
 
     MPI_Finalize();
