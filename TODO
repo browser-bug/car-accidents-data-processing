@@ -67,13 +67,13 @@ Todo:
       
       ☐ Modulare il codice creando funzioni d'appoggio o anche nuove classi per avere un codice più pulito e poter distribuire meglio i vari sotto processi @started(20-03-12 11:33)
 
-      ☐ Verificare se sia possibile spostare i processi su più macchine (MPI) @started(20-03-16 15:41)
+      ✔ Verificare se sia possibile spostare i processi su più macchine (MPI) @started(20-03-16 15:41) @done(20-03-31 12:29) @lasted(2w19h48m8s)
       
       
 Minors:
       ☐ Aggiungere al codice dell'error handling (es MPI_SUCCESS returns etc.) @started(20-03-12 01:40)
   
-      ☐ Trovare una buona libreria per plottare l'istogramma dei dati raccolti. Verrebbe una cosa carina da affiancare alle statistiche temporali @started(20-02-27 18:21)
+      ☐ Trovare una buona libreria per plottare il grafico dei tempi al variare del numero di processi e dei threads. @started(20-02-27 18:21)
       
 Additional informations:
   -  https://stackoverflow.com/questions/10766263/message-passing-interface-on-shared-memory-systems-performance
