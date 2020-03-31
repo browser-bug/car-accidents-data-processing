@@ -12,7 +12,7 @@
 #include <unistd.h> // for debugging
 #include <cstddef>
 
-#include "../utilities/CSVIterator.h"
+#include "utilities/CSVIterator.h"
 
 #define DEBUG 0
 
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 
     bool testing = false; // switch between dataset for testing and original dataset
 
-    const string dataset_path = "../dataset/";
+    const string dataset_path = "dataset/";
     const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "NYPD_Motor_Vehicle_Collisions.csv";
     ifstream file(csv_path);
 
