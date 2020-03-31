@@ -53,7 +53,7 @@ Todo:
 
       ☐ I buffers per le query sono tutti statici. C'è il modo di rendergli dinamici? @started(20-03-22 11:18)
       
-      ☐ Separare meglio i file sia di OpenMP che di MPI @started(20-03-31 16:06)
+      ✔ Separare meglio i file sia di OpenMP che di MPI @started(20-03-31 16:06) @done(20-03-31 19:37) @lasted(3h31m3s)
         Vogliamo utilizzare sempre lo stesso codice ma che vada bene sia per un'esecuzione completamente seriale, sia solo sfruttando OpenMP e sia sfruttando solo MPI.
         I file che uniscono le due tecnologie saranno messi fuori dalle cartelle e trattati come "main" della nostra applicazione.
 
