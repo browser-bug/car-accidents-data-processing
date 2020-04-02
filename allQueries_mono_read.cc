@@ -88,11 +88,18 @@ int main(int argc, char **argv)
     //     cout << "Usage: " << argv[0] << " <num_omp_threads>" << endl;
     //     exit(-1);
     // }
-    int num_omp_threads = 4; // TODO this will be assigned by user input
+    // TODO this will be assigned by user input
+    int num_omp_threads = 4;
+    string dataset_dim = "1M";
     // num_omp_threads = stoi(argv[1]);
 
     bool testing = false; // switch between dataset for testing and original dataset
     // int err;              // used for MPI error messages
+
+    // Load dataset variables
+    const string dataset_path = "dataset/";
+    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "collisions_" + dataset_dim + ".csv";
+    bool testing = false; // switch between dataset for testing and original dataset
 
     // Support dictonaries
     int indexCF = 0;
@@ -107,7 +114,6 @@ int main(int argc, char **argv)
     int *brghValues;                     // this contains all borough values in the dataset
     int num_brgh;
 
-    // Load dataset variables
     // TODO : maybe the csv_size can be specified at runtime by user
     int csv_size = testing ? TEST_SIZE : ORIGINAL_SIZE;
     // csv_size = 29996; // Set the first N rows to be read
