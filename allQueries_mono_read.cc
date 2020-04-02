@@ -112,7 +112,7 @@ int main(int argc, char **argv)
     int csv_size = testing ? TEST_SIZE : ORIGINAL_SIZE;
     // csv_size = 29996; // Set the first N rows to be read
     const string dataset_path = "dataset/";
-    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "NYPD_Motor_Vehicle_Collisions.csv";
+    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "collisions_1M.csv";
 
     // MPI variables
     int myrank, num_workers;
@@ -206,10 +206,10 @@ int main(int argc, char **argv)
         writeTimes = new double[num_workers]();
     }
 
-    overallBegin = cpuSecond();
+    overallBegin = MPI_Wtime();
 
     // Initialization for scattering, evenly dividing dataset
-    scatterBegin = cpuSecond();
+    scatterBegin = MPI_Wtime();
 
     if (myrank == 0)
     {
@@ -236,10 +236,10 @@ int main(int argc, char **argv)
         MPI_Recv(&my_row_displ, 1, MPI_INT, 0, 14, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 
-    scatterDuration = cpuSecond() - scatterBegin;
+    scatterDuration = MPI_Wtime() - scatterBegin;
 
     // [1] Loading data from file
-    loadBegin = cpuSecond();
+    loadBegin = MPI_Wtime();
 
     if (myrank == 0)
     {
@@ -280,11 +280,11 @@ int main(int argc, char **argv)
         }
     }
 
-    loadDuration = cpuSecond() - loadBegin;
+    loadDuration = MPI_Wtime() - loadBegin;
     MPI_Gather(&loadDuration, 1, MPI_DOUBLE, loadTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Broadcasting the dictionaries to all processes
-    scatterBegin = cpuSecond();
+    scatterBegin = MPI_Wtime();
 
     if (myrank == 0)
     {
@@ -333,11 +333,11 @@ int main(int argc, char **argv)
     localRows.resize(my_num_rows);
     MPI_Scatterv(dataScatter.data(), scatterCount, dataDispl, rowType, localRows.data(), my_num_rows, rowType, 0, MPI_COMM_WORLD);
 
-    scatterDuration += cpuSecond() - scatterBegin;
+    scatterDuration += MPI_Wtime() - scatterBegin;
     MPI_Gather(&scatterDuration, 1, MPI_DOUBLE, scatterTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // [2] Data processing
-    procBegin = cpuSecond();
+    procBegin = MPI_Wtime();
 
 // Every worker will compute in the final datastructure the num of lethal accidents for its sub-dataset and then Reduce it to allow the master to collect final results
 #pragma omp parallel for shared(local_lethAccPerWeek, local_accAndPerc, local_boroughWeekAcc) num_threads(num_omp_threads)
@@ -391,11 +391,11 @@ int main(int argc, char **argv)
     // Query3
     MPI_Reduce(local_boroughWeekAcc, global_boroughWeekAc, NUM_BOROUGH * NUM_YEARS * NUM_WEEKS_PER_YEAR, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
 
-    procDuration = cpuSecond() - procBegin;
+    procDuration = MPI_Wtime() - procBegin;
     MPI_Gather(&procDuration, 1, MPI_DOUBLE, procTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // [3] Output results
-    writeBegin = cpuSecond();
+    writeBegin = MPI_Wtime();
 
     if (myrank == 0)
     {
@@ -430,7 +430,7 @@ int main(int argc, char **argv)
                  << "\t\t\t\t\tPerc. lethal accidents: " << setprecision(4) << fixed << perc * 100 << "%"
                  << endl;
         }
-        cout << "Total CF parsed: " << cfDictionary.size() << "\n\n\n";
+        cout << "\nTotal contributing factors parsed: " << cfDictionary.size() << "\n\n\n";
 
         // Print Query3 results
         cout << "********* QUERY 3 *********" << endl;
@@ -463,10 +463,10 @@ int main(int argc, char **argv)
         cout << "Total boroughs parsed: " << brghDictionary.size() << "\n\n\n";
     }
 
-    writeDuration = cpuSecond() - writeBegin;
+    writeDuration = MPI_Wtime() - writeBegin;
     MPI_Gather(&writeDuration, 1, MPI_DOUBLE, writeTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    overallDuration = cpuSecond() - overallBegin;
+    overallDuration = MPI_Wtime() - overallBegin;
     MPI_Gather(&overallDuration, 1, MPI_DOUBLE, overallTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Print statistics

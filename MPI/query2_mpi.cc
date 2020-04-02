@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     // Load dataset variables
     int csv_size = testing ? TEST_SIZE : ORIGINAL_SIZE;
     const string dataset_path = "../dataset/";
-    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "NYPD_Motor_Vehicle_Collisions.csv";
+    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "collisions_1M.csv";
 
     // Support dictonaries
     int indexCF = 0;

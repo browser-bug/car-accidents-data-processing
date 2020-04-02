@@ -90,7 +90,7 @@ int main(int argc, char **argv)
     bool testing = false; // switch between dataset for testing and original dataset
 
     const string dataset_path = "dataset/";
-    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "NYPD_Motor_Vehicle_Collisions.csv";
+    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "collisions_1M.csv";
     ifstream file(csv_path);
 
     // Support dictonaries
@@ -149,7 +149,6 @@ int main(int argc, char **argv)
     MPI_Op accPairSum;
 
     MPI_Init(&argc, &argv);
-    omp_set_num_threads(num_omp_threads);
 
     if (DEBUG)
     {
@@ -196,10 +195,10 @@ int main(int argc, char **argv)
         writeTimes = new double[num_workers]();
     }
 
-    overallBegin = cpuSecond();
+    overallBegin = MPI_Wtime();
 
     // [1] Loading data from file
-    loadBegin = cpuSecond();
+    loadBegin = MPI_Wtime();
 
     // TODO add stackoverflow credits https://stackoverflow.com/questions/12939279/mpi-reading-from-a-text-file
     MPI_File_open(MPI_COMM_WORLD, csv_path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &input_file);
@@ -282,15 +281,6 @@ int main(int argc, char **argv)
 
                 Row newRow(getWeek(date), getMonth(date), getYear(date), row.getNumPersonsKilled(), 0);
 
-                if (!borough.empty())
-                {
-                    strncpy(newRow.borough, borough.c_str(), MAX_BOROUGH_LENGTH);
-
-                    // Populating dictionary for QUERY3
-                    if (brghDictionary.find(borough) == brghDictionary.end())
-                        brghDictionary.insert({borough, indexBrgh++});
-                }
-
                 for (unsigned int k = 0; k < cfs.size(); k++)
                 {
                     strncpy(newRow.contributing_factors[k], cfs[k].c_str(), MAX_CF_LENGTH);
@@ -299,6 +289,15 @@ int main(int argc, char **argv)
                     // Populating dictionary for QUERY2
                     if (cfDictionary.find(cfs[k]) == cfDictionary.end())
                         cfDictionary.insert({cfs[k], indexCF++});
+                }
+
+                if (!borough.empty())
+                {
+                    strncpy(newRow.borough, borough.c_str(), MAX_BOROUGH_LENGTH);
+
+                    // Populating dictionary for QUERY3
+                    if (brghDictionary.find(borough) == brghDictionary.end())
+                        brghDictionary.insert({borough, indexBrgh++});
                 }
 
                 localRows.push_back(newRow);
@@ -310,11 +309,11 @@ int main(int argc, char **argv)
         MPI_File_close(&input_file);
     }
 
-    loadDuration = cpuSecond() - loadBegin;
+    loadDuration = MPI_Wtime() - loadBegin;
     MPI_Gather(&loadDuration, 1, MPI_DOUBLE, loadTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Broadcasting the dictionaries to all processes
-    scatterBegin = cpuSecond();
+    scatterBegin = MPI_Wtime();
 
     int my_num_cf, my_num_brgh = 0;
     if (myrank != 0)
@@ -412,20 +411,22 @@ int main(int argc, char **argv)
             brghDictionary.insert({brghKeys[i], brghValues[i]});
     }
 
-    scatterDuration += cpuSecond() - scatterBegin;
+    scatterDuration += MPI_Wtime() - scatterBegin;
     MPI_Gather(&scatterDuration, 1, MPI_DOUBLE, scatterTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // [2] Data processing
-    procBegin = cpuSecond();
+    procBegin = MPI_Wtime();
 
+    omp_set_num_threads(num_omp_threads);
+    int year, week, lethal;
+    int cfIndex, brghIndex;
+    string borough;
 // Every worker will compute in the final datastructure the num of lethal accidents for its sub-dataset and then Reduce it to allow the master to collect final results
-#pragma omp parallel for shared(local_lethAccPerWeek, local_accAndPerc, local_boroughWeekAcc)
+#pragma omp parallel for default(shared) schedule(dynamic) private(year, week, lethal, cfIndex, brghIndex, borough)
     for (int i = 0; i < my_num_rows; i++)
     {
-        int year, week = 0; // used for indexing final data structure
-        int lethal = (localRows[i].num_pers_killed > 0) ? 1 : 0;
-        string borough = string(localRows[i].borough);
-        int cfIndex, brghIndex = 0; // used for indexing the two dictionaries
+        lethal = (localRows[i].num_pers_killed > 0) ? 1 : 0;
+        borough = string(localRows[i].borough);
 
         // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
         // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
@@ -445,7 +446,7 @@ int main(int argc, char **argv)
         /* Query2 */
         for (int k = 0; k < localRows[i].num_contributing_factors; k++)
         {
-            cfIndex = static_cfDictionary.at(string(localRows[i].contributing_factors[k]));
+            cfIndex = cfDictionary.at(string(localRows[i].contributing_factors[k]));
 #pragma omp atomic
             (local_accAndPerc[cfIndex].numAccidents)++;
 #pragma omp atomic
@@ -455,7 +456,7 @@ int main(int argc, char **argv)
         /* Query3 */
         if (!borough.empty()) // if borough is not specified we're not interested
         {
-            brghIndex = static_brghDictionary.at(borough);
+            brghIndex = brghDictionary.at(borough);
 #pragma omp atomic
             local_boroughWeekAcc[brghIndex][year][week].numAccidents++;
 #pragma omp atomic
@@ -470,11 +471,11 @@ int main(int argc, char **argv)
     // Query3
     MPI_Reduce(local_boroughWeekAcc, global_boroughWeekAc, NUM_BOROUGH * NUM_YEARS * NUM_WEEKS_PER_YEAR, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
 
-    procDuration = cpuSecond() - procBegin;
+    procDuration = MPI_Wtime() - procBegin;
     MPI_Gather(&procDuration, 1, MPI_DOUBLE, procTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // [3] Output results
-    writeBegin = cpuSecond();
+    writeBegin = MPI_Wtime();
 
     if (myrank == 0)
     {
@@ -509,7 +510,7 @@ int main(int argc, char **argv)
                  << "\t\t\t\t\tPerc. lethal accidents: " << setprecision(4) << fixed << perc * 100 << "%"
                  << endl;
         }
-        cout << "Total CF parsed: " << cfDictionary.size() << "\n\n\n";
+        cout << "\nTotal contributing factors parsed: " << cfDictionary.size() << "\n\n\n";
 
         // Print Query3 results
         cout << "********* QUERY 3 *********" << endl;
@@ -542,10 +543,10 @@ int main(int argc, char **argv)
         cout << "Total boroughs parsed: " << brghDictionary.size() << "\n\n\n";
     }
 
-    writeDuration = cpuSecond() - writeBegin;
+    writeDuration = MPI_Wtime() - writeBegin;
     MPI_Gather(&writeDuration, 1, MPI_DOUBLE, writeTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    overallDuration = cpuSecond() - overallBegin;
+    overallDuration = MPI_Wtime() - overallBegin;
     MPI_Gather(&overallDuration, 1, MPI_DOUBLE, overallTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Print statistics
