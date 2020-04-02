@@ -57,13 +57,12 @@ Todo:
         Vogliamo utilizzare sempre lo stesso codice ma che vada bene sia per un'esecuzione completamente seriale, sia solo sfruttando OpenMP e sia sfruttando solo MPI.
         I file che uniscono le due tecnologie saranno messi fuori dalle cartelle e trattati come "main" della nostra applicazione.
 
-      ☐ Controllare che l'introduzione di openMP sia ottimale e non ci siano modi più smart @started(20-03-16 15:36)
-        ☐ Forse sarebbe meglio dividere in 3 sezioni le query in modo tale che se un thread finisce le sue queries può passare a svolgere le query di un altro thread?
-        ☐ Aggiungere delle stampe fatte da ogni processo?
+      ✔ Controllare che l'introduzione di openMP sia ottimale e non ci siano modi più smart @started(20-03-16 15:36) @done(20-04-02 12:14) @lasted(2w2d19h38m50s)
+        ✘ Forse sarebbe meglio dividere in 3 sezioni le query in modo tale che se un thread finisce le sue queries può passare a svolgere le query di un altro thread? @cancelled(20-04-02 12:14)
+        ✘ Aggiungere delle stampe fatte da ogni processo? @cancelled(20-04-02 12:14)
           Ad es. il numero di thread che stanno eseguendo la query 1, il numero di thread che eseguono la query 2 ecc ecc.
-        ☐ Aggiungere un nowait al for loop del processing?
-        ☐ Aggiungere uno scheduling di tipo dinamico (in questo modo riusciamo teoricamente a velocizzare al massimo l'esecuzione)
-        ☐ Non credo serva specificare la clausola default() ma controlla. 
+        ✔ Aggiungere uno scheduling di tipo dinamico (in questo modo riusciamo teoricamente a velocizzare al massimo l'esecuzione) @done(20-04-02 12:13)
+        ✔ Non credo serva specificare la clausola default() ma controlla. @done(20-04-02 12:13)
           Già di default tutte le variabili non specificate all'interno della sezione parallel (es. le strutture dati che memorizzano i risultati delle query) sono settate shared ed è quello che vogliamo visto che l'unica rilevante è localRows, che è appunto utilizzata da tutti senza problemi di race conditions essendo solo letta.
 
       ☐ Aggiungere la parte di statistica. @started(20-03-16 15:37)
@@ -282,3 +281,4 @@ OpenMP Notes:
     
     
     
+Archive:
