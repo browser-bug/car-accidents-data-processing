@@ -40,4 +40,5 @@ MPI/examples/kmeans_mpi/kmeans_serial
 # CSV files too big (these are of course needed by client side)
 dataset/data_test copy.csv
 dataset/data_test_less.csv
-dataset/collisions_1M.csv
+dataset/collisions_*.csv
+dataset/original_collisions.csv
