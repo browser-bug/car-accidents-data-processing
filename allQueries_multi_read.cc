@@ -12,10 +12,11 @@
 #include <unistd.h> // for debugging
 #include <cstddef>
 
-#include "utilities/CSVIterator.h"
+#include "utilities/csv_row/CSVIterator.h"
 
 #define DEBUG 0
 
+#define DATE_LENGTH 11
 // Query1
 #define NUM_YEARS 6
 #define NUM_WEEKS_PER_YEAR 53
@@ -32,17 +33,12 @@
 // Data structure representing a row used for pre-processing
 typedef struct Row
 {
-    Row() : week(0), month(0), year(0), num_pers_killed(0), num_contributing_factors(0){};
-    Row(int w,
-        int m,
-        int y,
-        int npk,
+    Row() : num_pers_killed(0), num_contributing_factors(0){};
+    Row(int npk,
         int ncf)
-        : week(w), month(m), year(y), num_pers_killed(npk), num_contributing_factors(ncf){};
+        : num_pers_killed(npk), num_contributing_factors(ncf){};
 
-    int week;
-    int month;
-    int year;
+    char date[DATE_LENGTH] = {};
 
     int num_pers_killed;
 
@@ -128,22 +124,18 @@ int main(int argc, char **argv)
     // MPI Datatypes definitions
     MPI_Datatype rowType;
     int rowLength[] = {
-        1,
-        1,
-        1,
+        DATE_LENGTH,
         1,
         MAX_CF_PER_ROW * MAX_CF_LENGTH,
         1,
         MAX_BOROUGH_LENGTH};
     MPI_Aint rowDisplacements[] = {
-        offsetof(Row, week),
-        offsetof(Row, month),
-        offsetof(Row, year),
+        offsetof(Row, date),
         offsetof(Row, num_pers_killed),
         offsetof(Row, contributing_factors),
         offsetof(Row, num_contributing_factors),
         offsetof(Row, borough)};
-    MPI_Datatype rowTypes[] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_CHAR, MPI_INT, MPI_CHAR};
+    MPI_Datatype rowTypes[] = {MPI_CHAR, MPI_INT, MPI_CHAR, MPI_INT, MPI_CHAR};
 
     // FIX this is no longer needed as MPI provides the MPI_2INT datatype
     // MPI_Datatype accPairType;
@@ -168,7 +160,7 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 
-    MPI_Type_create_struct(7, rowLength, rowDisplacements, rowTypes, &rowType);
+    MPI_Type_create_struct(5, rowLength, rowDisplacements, rowTypes, &rowType);
     MPI_Type_commit(&rowType);
 
     MPI_Op_create(pairSum, true, &accPairSum);
@@ -284,7 +276,9 @@ int main(int argc, char **argv)
                 string borough = row[BOROUGH];
                 vector<string> cfs = row.getContributingFactors();
 
-                Row newRow(getWeek(date), getMonth(date), getYear(date), row.getNumPersonsKilled(), 0);
+                Row newRow(row.getNumPersonsKilled(), 0);
+
+                strncpy(newRow.date, date.c_str(), DATE_LENGTH);
 
                 for (unsigned int k = 0; k < cfs.size(); k++)
                 {
@@ -424,25 +418,28 @@ int main(int argc, char **argv)
 
     cout << "[Proc. " + to_string(myrank) + "] Started processing dataset..." << endl;
     omp_set_num_threads(num_omp_threads);
-    int year, week, lethal;
+    int year, week, month, lethal;
     int cfIndex, brghIndex;
     string borough;
 // Every worker will compute in the final datastructure the num of lethal accidents for its sub-dataset and then Reduce it to allow the master to collect final results
 #pragma omp parallel for default(shared) schedule(dynamic) private(year, week, lethal, cfIndex, brghIndex, borough)
     for (int i = 0; i < my_num_rows; i++)
     {
+        week = getWeek(localRows[i].date);
+        year = getYear(localRows[i].date);
+        month = getMonth(localRows[i].date);
         lethal = (localRows[i].num_pers_killed > 0) ? 1 : 0;
         borough = string(localRows[i].borough);
 
         // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
         // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
-        if (localRows[i].week == 1 && localRows[i].month == 12)
-            localRows[i].year++;
-        else if ((localRows[i].week == 52 || localRows[i].week == 53) && localRows[i].month == 1)
-            localRows[i].year--;
+        if (week == 1 && month == 12)
+            year++;
+        else if ((week == 52 || week == 53) && month == 1)
+            year--;
 
-        year = localRows[i].year - 2012;
-        week = localRows[i].week - 1;
+        year = year - 2012;
+        week = week - 1;
 
         /* Query1 */
         if (lethal)
@@ -485,8 +482,12 @@ int main(int argc, char **argv)
 
     if (myrank == 0)
     {
+        // Open output file
+        ofstream outFile("results/result_multiread_" + dataset_dim + ".txt");
+        outFile.clear();
+
         // Print Query1 results
-        cout << "********* QUERY 1 *********" << endl;
+        outFile << "********* QUERY 1 *********" << endl;
         int totalWeeks = 0;
         int totalAccidents = 0;
 
@@ -497,36 +498,36 @@ int main(int argc, char **argv)
                 int numLethAcc = global_lethAccPerWeek[year][week];
                 if (numLethAcc > 0)
                 {
-                    cout << "(" << (year + 2012) << ")Week: " << (week + 1) << "\t\t\t Num. lethal accidents: ";
-                    cout << numLethAcc << endl;
+                    outFile << "(" << (year + 2012) << ")Week: " << (week + 1) << "\t\t\t Num. lethal accidents: ";
+                    outFile << numLethAcc << endl;
                     totalAccidents += numLethAcc;
                     totalWeeks++;
                 }
             }
         }
-        cout << "Total weeks: " << totalWeeks << "\t\t\tTotal accidents: " << totalAccidents << "\n\n\n";
+        outFile << "Total weeks: " << totalWeeks << "\t\t\tTotal accidents: " << totalAccidents << "\n\n\n";
 
         // Print Query2 results
-        cout << "********* QUERY 2 *********" << endl;
+        outFile << "********* QUERY 2 *********" << endl;
         for (auto el : cfDictionary)
         {
             double perc = double(global_accAndPerc[el.second].numLethalAccidents) / global_accAndPerc[el.second].numAccidents;
-            cout << el.first << endl
-                 << "\t\tNum. of accidents: " << global_accAndPerc[el.second].numAccidents
-                 << "\t\t\t\t\tPerc. lethal accidents: " << setprecision(4) << fixed << perc * 100 << "%"
-                 << endl;
+            outFile << el.first << endl
+                    << "\t\tNum. of accidents: " << global_accAndPerc[el.second].numAccidents
+                    << "\t\t\t\t\tPerc. lethal accidents: " << setprecision(4) << fixed << perc * 100 << "%"
+                    << endl;
         }
-        cout << "\nTotal contributing factors parsed: " << cfDictionary.size() << "\n\n\n";
+        outFile << "\nTotal contributing factors parsed: " << cfDictionary.size() << "\n\n\n";
 
         // Print Query3 results
-        cout << "********* QUERY 3 *********" << endl;
+        outFile << "********* QUERY 3 *********" << endl;
         for (auto b : brghDictionary)
         {
             int numWeeks = 0;
             int numAccidents = 0;
             double numLethalAccidents = 0;
 
-            cout << "Borough: " << b.first << endl;
+            outFile << "Borough: " << b.first << endl;
             for (int i = 0; i < NUM_YEARS; i++) // for each year
             {
                 for (int j = 0; j < NUM_WEEKS_PER_YEAR; j++) // for each week
@@ -537,16 +538,17 @@ int main(int argc, char **argv)
                     numAccidents += global_boroughWeekAc[b.second][i][j].numAccidents;
                     numLethalAccidents += global_boroughWeekAc[b.second][i][j].numLethalAccidents;
 
-                    cout << "(" << (i + 2012) << ")Week " << (j + 1);                                               // print (Year)Week N
-                    cout << "\t\t\t num. accidents: " << global_boroughWeekAc[b.second][i][j].numAccidents << endl; // print numAccidents
+                    outFile << "(" << (i + 2012) << ")Week " << (j + 1);                                               // print (Year)Week N
+                    outFile << "\t\t\t num. accidents: " << global_boroughWeekAc[b.second][i][j].numAccidents << endl; // print numAccidents
                 }
             }
             double avg = numLethalAccidents / numWeeks;
-            cout << "[" << b.first << "] Avg. lethal accidents per week is: " << setprecision(2) << fixed << avg * 100 << "%";
-            cout << "\t\t\tNum. accidents: " << numAccidents << "\t\tNum. lethal accidents: " << setprecision(0) << fixed << numLethalAccidents << endl;
-            cout << endl;
+            outFile << "[" << b.first << "] Avg. lethal accidents per week is: " << setprecision(2) << fixed << avg * 100 << "%";
+            outFile << "\t\t\tNum. accidents: " << numAccidents << "\t\tNum. lethal accidents: " << setprecision(0) << fixed << numLethalAccidents << endl;
+            outFile << endl;
         }
-        cout << "Total boroughs parsed: " << brghDictionary.size() << "\n\n\n";
+        outFile << "Total boroughs parsed: " << brghDictionary.size() << "\n\n\n";
+        outFile.close();
     }
 
     writeDuration = MPI_Wtime() - writeBegin;
@@ -580,6 +582,20 @@ int main(int argc, char **argv)
             avgProcessing += procTimes[i];
             avgWriting += writeTimes[i];
         }
+
+        // Open result file
+        ifstream checkFile("stats/stats_multiread_" + dataset_dim + ".csv");
+        if (!checkFile.good())
+        {
+            // if csv doesn't exists create file and add header first
+            ofstream outFile("stats/stats_multiread_" + dataset_dim + ".csv");
+            outFile << "Loading, Processing, Writing, Overall" << endl;
+            outFile.close();
+        }
+        ofstream outFile("stats/stats_multiread_" + dataset_dim + ".csv", ios::app);
+        outFile << (avgLoading / num_workers) << "," << (avgProcessing / num_workers) << "," << writeTimes[0] << "," << (avgOverall / num_workers) << endl;
+        outFile.close();
+
         cout << endl
              << "With average times of: "
              << "[1] Loading(" << avgLoading / num_workers << "), "

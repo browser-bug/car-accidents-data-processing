@@ -10,7 +10,7 @@
 #include <unistd.h> // for debugging
 #include <cstddef>
 
-#include "utilities/CSVIterator.h"
+#include "utilities/csv_row/CSVIterator.h"
 
 #define DEBUG 0
 
@@ -45,6 +45,7 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
+    string dataset_dim = "1M";
     bool testing = false; // switch between dataset for testing and original dataset
     // int err;              // used for MPI error messages
 
@@ -56,11 +57,8 @@ int main(int argc, char **argv)
     map<string, int> brghDictionary;
 
     // Load dataset variables
-    // TODO : maybe the csv_size can be specified at runtime by user
-    int csv_size = testing ? TEST_SIZE : ORIGINAL_SIZE;
-    // csv_size = 29996; // Set the first N rows to be read
     const string dataset_path = "dataset/";
-    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "collisions_1M.csv";
+    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "collisions_" + dataset_dim + ".csv";
 
     vector<CSVRow> localRows;
 
@@ -81,13 +79,12 @@ int main(int argc, char **argv)
 
     ifstream file(csv_path);
     CSVRow row;
-    for (int i = 0; i < csv_size; i++)
+    for (CSVIterator loop(file); loop != CSVIterator(); loop++)
     {
-        if (i == 0)
-            file >> row >> row; // skip the header
-        else
-            file >> row;
+        if (!(*loop)[DATE].compare("DATE")) // TODO find a better way to skip header
+            continue;
 
+        row = (*loop);
         localRows.push_back(row);
 
         string borough = row[BOROUGH];
@@ -163,8 +160,12 @@ int main(int argc, char **argv)
     // [3] Output results
     writeBegin = cpuSecond();
 
+    // Open output file
+    ofstream outFile("results/result_serial_" + dataset_dim + ".txt");
+    outFile.clear();
+
     // Print Query1 results
-    cout << "********* QUERY 1 *********" << endl;
+    outFile << "********* QUERY 1 *********" << endl;
     int totalWeeks = 0;
     int totalAccidents = 0;
 
@@ -175,36 +176,36 @@ int main(int argc, char **argv)
             int numLethAcc = local_lethAccPerWeek[year][week];
             if (numLethAcc > 0)
             {
-                cout << "(" << (year + 2012) << ")Week: " << (week + 1) << "\t\t\t Num. lethal accidents: ";
-                cout << numLethAcc << endl;
+                outFile << "(" << (year + 2012) << ")Week: " << (week + 1) << "\t\t\t Num. lethal accidents: ";
+                outFile << numLethAcc << endl;
                 totalAccidents += numLethAcc;
                 totalWeeks++;
             }
         }
     }
-    cout << "Total weeks: " << totalWeeks << "\t\t\tTotal accidents: " << totalAccidents << "\n\n\n";
+    outFile << "\nTotal weeks: " << totalWeeks << "\t\t\tTotal accidents: " << totalAccidents << "\n\n\n";
 
     // Print Query2 results
-    cout << "********* QUERY 2 *********" << endl;
+    outFile << "********* QUERY 2 *********" << endl;
     for (auto el : cfDictionary)
     {
         double perc = double(local_accAndPerc[el.second].numLethalAccidents) / local_accAndPerc[el.second].numAccidents;
-        cout << el.first << endl
-             << "\t\tNum. of accidents: " << local_accAndPerc[el.second].numAccidents
-             << "\t\t\t\t\tPerc. lethal accidents: " << setprecision(4) << fixed << perc * 100 << "%"
-             << endl;
+        outFile << el.first << endl
+                << "\t\tNum. of accidents: " << local_accAndPerc[el.second].numAccidents
+                << "\t\t\t\t\tPerc. lethal accidents: " << setprecision(4) << fixed << perc * 100 << "%"
+                << endl;
     }
-    cout << "Total CF parsed: " << cfDictionary.size() << "\n\n\n";
+    outFile << "Total CF parsed: " << cfDictionary.size() << "\n\n\n";
 
     // Print Query3 results
-    cout << "********* QUERY 3 *********" << endl;
+    outFile << "********* QUERY 3 *********" << endl;
     for (auto b : brghDictionary)
     {
         int numWeeks = 0;
         int numAccidents = 0;
         double numLethalAccidents = 0;
 
-        cout << "Borough: " << b.first << endl;
+        outFile << "Borough: " << b.first << endl;
         for (int i = 0; i < NUM_YEARS; i++) // for each year
         {
             for (int j = 0; j < NUM_WEEKS_PER_YEAR; j++) // for each week
@@ -215,16 +216,16 @@ int main(int argc, char **argv)
                 numAccidents += local_boroughWeekAcc[b.second][i][j].numAccidents;
                 numLethalAccidents += local_boroughWeekAcc[b.second][i][j].numLethalAccidents;
 
-                cout << "(" << (i + 2012) << ")Week " << (j + 1);                                               // print (Year)Week N
-                cout << "\t\t\t num. accidents: " << local_boroughWeekAcc[b.second][i][j].numAccidents << endl; // print numAccidents
+                outFile << "(" << (i + 2012) << ")Week " << (j + 1);                                               // print (Year)Week N
+                outFile << "\t\t\t num. accidents: " << local_boroughWeekAcc[b.second][i][j].numAccidents << endl; // print numAccidents
             }
         }
         double avg = numLethalAccidents / numWeeks;
-        cout << "[" << b.first << "] Avg. lethal accidents per week is: " << setprecision(2) << fixed << avg * 100 << "%";
-        cout << "\t\t\tNum. accidents: " << numAccidents << "\t\tNum. lethal accidents: " << setprecision(0) << fixed << numLethalAccidents << endl;
-        cout << endl;
+        outFile << "[" << b.first << "] Avg. lethal accidents per week is: " << setprecision(2) << fixed << avg * 100 << "%";
+        outFile << "\t\t\tNum. accidents: " << numAccidents << "\t\tNum. lethal accidents: " << setprecision(0) << fixed << numLethalAccidents << endl;
     }
-    cout << "Total boroughs parsed: " << brghDictionary.size() << "\n\n\n";
+    outFile << "\nTotal boroughs parsed: " << brghDictionary.size() << "\n\n\n";
+    outFile.close();
 
     writeDuration = cpuSecond() - writeBegin;
 
@@ -238,4 +239,17 @@ int main(int argc, char **argv)
     cout << "Processing(" << procDuration << "), ";
     cout << "Writing(" << writeDuration << "), ";
     cout << "took overall " << overallDuration << " seconds" << endl;
+
+    // Open result file
+    ifstream checkFile("stats/stats_serial_" + dataset_dim + ".csv");
+    if (!checkFile.good())
+    {
+        // if csv doesn't exists create file and add header first
+        ofstream statsFile("stats/stats_serial_" + dataset_dim + ".csv");
+        statsFile << "Loading, Processing, Writing, Overall" << endl;
+        statsFile.close();
+    }
+    ofstream statsFile("stats/stats_serial_" + dataset_dim + ".csv", ios::app);
+    statsFile << loadDuration << "," << procDuration << "," << writeDuration << "," << overallDuration << endl;
+    statsFile.close();
 }
