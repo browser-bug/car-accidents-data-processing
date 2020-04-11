@@ -7,7 +7,7 @@ Author: Martin York https://stackoverflow.com/users/14065/martin-york
 #ifndef CSVROW_H
 #define CSVROW_H
 
-#include "utility.h"
+#include "../utility.h"
 
 #include <iostream>
 #include <algorithm>
