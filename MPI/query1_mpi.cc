@@ -7,12 +7,15 @@
 #include <list>
 #include <algorithm>
 #include <string>
+#include <string.h> // for string copy
 #include <cstddef>
 
-#include "../utilities/CSVIterator.h"
+#include "../utilities/csv_row/CSVIterator.h"
 
 #define ORIGINAL_SIZE 955928
 #define TEST_SIZE 29999
+
+#define DATE_LENGTH 11
 
 #define NUM_YEARS 6
 #define NUM_WEEKS_PER_YEAR 53
@@ -22,15 +25,11 @@
 // Data structure representing a row used for pre-processing
 typedef struct Row
 {
-    Row() : week(0), month(0), year(0), num_pers_killed(0){};
-    Row(int w,
-        int m,
-        int y,
-        int npk) : week(w), month(m), year(y), num_pers_killed(npk){};
+    Row() : num_pers_killed(0){};
+    Row(int npk)
+        : num_pers_killed(npk){};
 
-    int week;
-    int month;
-    int year;
+    char date[DATE_LENGTH] = {};
 
     int num_pers_killed;
 } Row;
@@ -59,13 +58,11 @@ int main(int argc, char **argv)
 
     // MPI Datatype creation
     MPI_Datatype rowType;
-    int rowLength[4] = {1, 1, 1, 1};
+    int rowLength[] = {DATE_LENGTH, 1};
     MPI_Aint rowDisplacements[] = {
-        offsetof(Row, week),
-        offsetof(Row, month),
-        offsetof(Row, year),
+        offsetof(Row, date),
         offsetof(Row, num_pers_killed)};
-    MPI_Datatype rowTypes[] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT};
+    MPI_Datatype rowTypes[] = {MPI_CHAR, MPI_INT};
 
     MPI_Init(&argc, &argv);
 
@@ -73,7 +70,7 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 
-    MPI_Type_create_struct(4, rowLength, rowDisplacements, rowTypes, &rowType);
+    MPI_Type_create_struct(2, rowLength, rowDisplacements, rowTypes, &rowType);
     MPI_Type_commit(&rowType);
 
     // Local data structure for QUERY1
@@ -151,8 +148,9 @@ int main(int argc, char **argv)
                 file >> row;
 
             string date = row[DATE];
-            dataScatter.push_back(
-                Row(getWeek(date), getMonth(date), getYear(date), row.getNumPersonsKilled()));
+            Row newRow(row.getNumPersonsKilled());
+            strncpy(newRow.date, date.c_str(), DATE_LENGTH);
+            dataScatter.push_back(newRow);
             // cout << "(" << dataScatter[i].year << ") Week " << dataScatter[i].week << " num.pers.killed " << dataScatter[i].num_pers_killed << endl;
         }
     }
@@ -172,18 +170,19 @@ int main(int argc, char **argv)
     // Every worker will compute in the final datastructure the num of lethal accidents for its sub-dataset and then Reduce it to allow the master to collect final results
     for (int i = 0; i < my_num_rows; i++)
     {
-        int year; // used for indexing final data structure
-        int week; // used for indexing final data structure
+        int year = getYear(localRows[i].date); // used for indexing final data structure
+        int week = getWeek(localRows[i].date); // used for indexing final data structure
+        int month = getMonth(localRows[i].date);
 
         // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
         // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
-        if (localRows[i].week == 1 && localRows[i].month == 12)
-            localRows[i].year++;
-        else if ((localRows[i].week == 52 || localRows[i].week == 53) && localRows[i].month == 1)
-            localRows[i].year--;
+        if (week == 1 && month == 12)
+            year++;
+        else if ((week == 52 || week == 53) && month == 1)
+            year--;
 
-        year = localRows[i].year - 2012;
-        week = localRows[i].week - 1;
+        year = year - 2012;
+        week = week - 1;
 
         if (localRows[i].num_pers_killed > 0)
             local_lethAccPerWeek[year][week]++;

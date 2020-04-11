@@ -11,7 +11,7 @@
 #include <unistd.h> // for debugging
 #include <cstddef>
 
-#include "../utilities/CSVIterator.h"
+#include "../utilities/csv_row/CSVIterator.h"
 
 #define DEBUG 0
 
@@ -19,38 +19,24 @@
 #define ORIGINAL_SIZE 955928
 #define TEST_SIZE 29999
 
-// Query1
+#define DATE_LENGTH 11
+
 #define NUM_YEARS 6
 #define NUM_WEEKS_PER_YEAR 53
 
-// Query2
-#define NUM_CONTRIBUTING_FACTORS 47
-#define MAX_CF_PER_ROW 5
-#define MAX_CF_LENGTH 55
-
-// Query3
 #define NUM_BOROUGH 5
 #define MAX_BOROUGH_LENGTH 15
 
 // Data structure representing a row used for pre-processing
 typedef struct Row
 {
-    Row() : week(0), month(0), year(0), num_pers_killed(0), num_contributing_factors(0){};
-    Row(int w,
-        int m,
-        int y,
-        int npk,
-        int ncf)
-        : week(w), month(m), year(y), num_pers_killed(npk), num_contributing_factors(ncf){};
+    Row() : num_pers_killed(0){};
+    Row(int npk)
+        : num_pers_killed(npk){};
 
-    int week;
-    int month;
-    int year;
+    char date[DATE_LENGTH] = {};
 
     int num_pers_killed;
-
-    char contributing_factors[MAX_CF_PER_ROW][MAX_CF_LENGTH] = {};
-    int num_contributing_factors;
 
     char borough[MAX_BOROUGH_LENGTH] = {};
 } Row;
@@ -90,13 +76,7 @@ int main(int argc, char **argv)
     const string dataset_path = "../dataset/";
     const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "collisions_1M.csv";
 
-    // Support dictonaries
-    int indexCF = 0;
-    map<string, int> cfDictionary;
-    char(*cfKeys)[MAX_CF_LENGTH]; // this contains all cf keys in the dataset
-    int *cfValues;                // this contains all cf values in the dataset
-    int num_cf;
-
+    // Support dictionaries
     int indexBrgh = 0;
     map<string, int> brghDictionary;
     char(*brghKeys)[MAX_BOROUGH_LENGTH]; // this contains all borough keys in the dataset
@@ -116,22 +96,14 @@ int main(int argc, char **argv)
     // MPI Datatypes definitions
     MPI_Datatype rowType;
     int rowLength[] = {
-        1,
-        1,
-        1,
-        1,
-        MAX_CF_PER_ROW * MAX_CF_LENGTH,
+        DATE_LENGTH,
         1,
         MAX_BOROUGH_LENGTH};
     MPI_Aint rowDisplacements[] = {
-        offsetof(Row, week),
-        offsetof(Row, month),
-        offsetof(Row, year),
+        offsetof(Row, date),
         offsetof(Row, num_pers_killed),
-        offsetof(Row, contributing_factors),
-        offsetof(Row, num_contributing_factors),
         offsetof(Row, borough)};
-    MPI_Datatype rowTypes[] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_CHAR, MPI_INT, MPI_CHAR};
+    MPI_Datatype rowTypes[] = {MPI_CHAR, MPI_INT, MPI_CHAR};
 
     // MPI Operators definitions
     MPI_Op accPairSum;
@@ -153,7 +125,7 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 
-    MPI_Type_create_struct(7, rowLength, rowDisplacements, rowTypes, &rowType);
+    MPI_Type_create_struct(3, rowLength, rowDisplacements, rowTypes, &rowType);
     MPI_Type_commit(&rowType);
 
     MPI_Op_create(pairSum, true, &accPairSum);
@@ -235,31 +207,19 @@ int main(int argc, char **argv)
 
             string date = row[DATE];
             string borough = row[BOROUGH];
-            vector<string> cfs = row.getContributingFactors();
-
-            dataScatter.push_back(
-                Row(getWeek(date), getMonth(date), getYear(date), row.getNumPersonsKilled(), 0));
+            Row newRow(row.getNumPersonsKilled());
+            strncpy(newRow.date, date.c_str(), DATE_LENGTH);
 
             if (!borough.empty())
             {
-                strncpy(dataScatter[i].borough, borough.c_str(), MAX_BOROUGH_LENGTH);
+                strncpy(newRow.borough, borough.c_str(), MAX_BOROUGH_LENGTH);
 
                 // Populating dictionary for QUERY3
                 if (brghDictionary.find(borough) == brghDictionary.end())
                     brghDictionary.insert({borough, indexBrgh++});
             }
 
-            for (unsigned int k = 0; k < cfs.size(); k++)
-            {
-                {
-                    strncpy(dataScatter[i].contributing_factors[k], cfs[k].c_str(), MAX_CF_LENGTH);
-                    dataScatter[i].num_contributing_factors++;
-                }
-
-                // Populating dictionary for QUERY2
-                if (cfDictionary.find(cfs[k]) == cfDictionary.end())
-                    cfDictionary.insert({cfs[k], indexCF++});
-            }
+            dataScatter.push_back(newRow);
         }
     }
 
@@ -271,26 +231,15 @@ int main(int argc, char **argv)
 
     if (myrank == 0)
     {
-        num_cf = cfDictionary.size();
         num_brgh = brghDictionary.size();
     }
-    MPI_Bcast(&num_cf, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&num_brgh, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    cfKeys = (char(*)[MAX_CF_LENGTH])malloc(num_cf * sizeof(*cfKeys));
-    cfValues = new int[num_cf];
     brghKeys = (char(*)[MAX_BOROUGH_LENGTH])malloc(num_brgh * sizeof(*brghKeys));
     brghValues = new int[num_brgh];
     if (myrank == 0)
     {
         int i = 0;
-        for (auto cf : cfDictionary)
-        {
-            strncpy(cfKeys[i], cf.first.c_str(), MAX_CF_LENGTH);
-            cfValues[i] = cf.second;
-            i++;
-        }
-        i = 0;
         for (auto b : brghDictionary)
         {
             strncpy(brghKeys[i], b.first.c_str(), MAX_BOROUGH_LENGTH);
@@ -299,15 +248,11 @@ int main(int argc, char **argv)
         }
     }
 
-    MPI_Bcast(cfKeys, num_cf * MAX_CF_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
-    MPI_Bcast(cfValues, num_cf, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(brghKeys, num_brgh * MAX_BOROUGH_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
     MPI_Bcast(brghValues, num_brgh, MPI_INT, 0, MPI_COMM_WORLD);
 
     if (myrank != 0)
     {
-        for (int i = 0; i < num_cf; i++)
-            cfDictionary.insert({cfKeys[i], cfValues[i]});
         for (int i = 0; i < num_brgh; i++)
             brghDictionary.insert({brghKeys[i], brghValues[i]});
     }
@@ -331,18 +276,19 @@ int main(int argc, char **argv)
 
         int lethal = (localRows[i].num_pers_killed > 0) ? 1 : 0;
 
-        int year; // used for indexing final data structure
-        int week; // used for indexing final data structure
+        int year = getYear(localRows[i].date); // used for indexing final data structure
+        int week = getWeek(localRows[i].date); // used for indexing final data structure
+        int month = getMonth(localRows[i].date);
 
         // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
         // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
-        if (localRows[i].week == 1 && localRows[i].month == 12)
-            localRows[i].year++;
-        else if ((localRows[i].week == 52 || localRows[i].week == 53) && localRows[i].month == 1)
-            localRows[i].year--;
+        if (week == 1 && month == 12)
+            year++;
+        else if ((week == 52 || week == 53) && month == 1)
+            year--;
 
-        year = localRows[i].year - 2012;
-        week = localRows[i].week - 1;
+        year = year - 2012;
+        week = week - 1;
 
         int index = brghDictionary.at(borough);
         local_boroughWeekAcc[index][year][week].numAccidents++;
@@ -428,8 +374,6 @@ int main(int argc, char **argv)
              << "overall(" << avgOverall / num_workers << ").\n";
     }
 
-    delete[] cfKeys;
-    delete[] cfValues;
     delete[] brghKeys;
     delete[] brghValues;
 

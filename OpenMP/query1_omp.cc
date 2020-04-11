@@ -10,7 +10,7 @@
 #include <unistd.h> // for debugging
 #include <cstddef>
 
-#include "../utilities/CSVIterator.h"
+#include "../utilities/csv_row/CSVIterator.h"
 
 #define DEBUG 0
 
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
     procBegin = cpuSecond();
 
     // Every worker will compute in the final datastructure the num of lethal accidents for its sub-dataset and then Reduce it to allow the master to collect final results
-#pragma omp parallel for shared(local_lethAccPerWeek)
+#pragma omp parallel for shared(local_lethAccPerWeek) schedule(dynamic)
     for (unsigned int i = 0; i < localRows.size(); i++)
     {
         CSVRow row = localRows[i];

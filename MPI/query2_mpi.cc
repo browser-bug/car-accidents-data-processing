@@ -11,7 +11,7 @@
 #include <unistd.h> // for debugging
 #include <cstddef>
 
-#include "../utilities/CSVIterator.h"
+#include "../utilities/csv_row/CSVIterator.h"
 
 #define ORIGINAL_SIZE 955928
 #define TEST_SIZE 29999
@@ -29,17 +29,10 @@
 // Data structure representing a row used for pre-processing
 typedef struct Row
 {
-    Row() : week(0), month(0), year(0), num_pers_killed(0), num_contributing_factors(0){};
-    Row(int w,
-        int m,
-        int y,
-        int npk,
+    Row() : num_pers_killed(0), num_contributing_factors(0){};
+    Row(int npk,
         int ncf)
-        : week(w), month(m), year(y), num_pers_killed(npk), num_contributing_factors(ncf){};
-
-    int week;
-    int month;
-    int year;
+        : num_pers_killed(npk), num_contributing_factors(ncf){};
 
     int num_pers_killed;
 
@@ -103,19 +96,13 @@ int main(int argc, char **argv)
     MPI_Datatype rowType;
     int rowLength[] = {
         1,
-        1,
-        1,
-        1,
         MAX_CF_PER_ROW * MAX_CF_LENGTH,
         1};
     MPI_Aint rowDisplacements[] = {
-        offsetof(Row, week),
-        offsetof(Row, month),
-        offsetof(Row, year),
         offsetof(Row, num_pers_killed),
         offsetof(Row, contributing_factors),
         offsetof(Row, num_contributing_factors)};
-    MPI_Datatype rowTypes[] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_CHAR, MPI_INT};
+    MPI_Datatype rowTypes[] = {MPI_INT, MPI_CHAR, MPI_INT};
 
     // MPI Operators definitions
     MPI_Op accPairSum;
@@ -126,7 +113,7 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 
-    MPI_Type_create_struct(6, rowLength, rowDisplacements, rowTypes, &rowType);
+    MPI_Type_create_struct(3, rowLength, rowDisplacements, rowTypes, &rowType);
     MPI_Type_commit(&rowType);
 
     MPI_Op_create(pairSum, true, &accPairSum);
@@ -205,19 +192,20 @@ int main(int argc, char **argv)
             else
                 file >> row;
 
-            string date = row[DATE];
-            dataScatter.push_back(
-                Row(getWeek(date), getMonth(date), getYear(date), row.getNumPersonsKilled(), 0));
+            Row newRow(row.getNumPersonsKilled(), 0);
+
             vector<string> cfs = row.getContributingFactors();
             for (unsigned int k = 0; k < cfs.size(); k++)
             {
-                strcpy(dataScatter[i].contributing_factors[k], cfs[k].c_str());
-                dataScatter[i].num_contributing_factors++;
+                strcpy(newRow.contributing_factors[k], cfs[k].c_str());
+                newRow.num_contributing_factors++;
 
                 // Populating dictonary for QUERY2
                 if (cfDictionary.find(cfs[k]) == cfDictionary.end())
                     cfDictionary.insert({cfs[k], indexCF++});
             }
+
+            dataScatter.push_back(newRow);
 
             // cout << "(" << dataScatter[i].year
             //      << ") Week " << dataScatter[i].week
