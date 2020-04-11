@@ -52,6 +52,8 @@ Todo:
       ✔ Lettura dello stesso file da più processi utilizzando MPI_IO() @started(20-03-21 19:32) @done(20-03-21 19:32) @lasted(51s)
 
       ☐ I buffers per le query sono tutti statici. C'è il modo di rendergli dinamici? @started(20-03-22 11:18)
+
+      ✔ Trovare un modo per capire il numero di righe del dataset senza utilizzare delle macro preimpostate @started(20-04-04 13:00) @done(20-04-10 17:34) @lasted(6d4h34m6s)
       
       ✔ Separare meglio i file sia di OpenMP che di MPI @started(20-03-31 16:06) @done(20-03-31 19:37) @lasted(3h31m3s)
         Vogliamo utilizzare sempre lo stesso codice ma che vada bene sia per un'esecuzione completamente seriale, sia solo sfruttando OpenMP e sia sfruttando solo MPI.
@@ -77,6 +79,12 @@ Todo:
       
       ☐ Modulare il codice creando funzioni d'appoggio o anche nuove classi per avere un codice più pulito e poter distribuire meglio i vari sotto processi @started(20-03-12 11:33)
 
+      ☐ Aggiungere uno script python per runnare un binario arbitrario un tot numero di volte con specifici parametri @started(20-04-11 17:48)
+        Ad esempio il numero di processi MPI, il numero di therads OpenMP, ecc. ecc.
+        ☐ Convertire getopt to argparse (python2 vs python3 parsers) @started(20-04-11 17:48)
+          Rafforziamo il parsing aggiungendo la possibilità di rendere delle opzioni obbligatori (es. --hostfile).
+
+        
       ✔ Verificare se sia possibile spostare i processi su più macchine (MPI) @started(20-03-16 15:41) @done(20-03-31 12:29) @lasted(2w19h48m8s)
       
       
