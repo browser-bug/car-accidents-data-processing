@@ -12,8 +12,6 @@
 
 #include "utilities/csv_row/CSVIterator.h"
 
-#define DEBUG 0
-
 // Dataset
 #define ORIGINAL_SIZE 955928
 #define TEST_SIZE 29999
@@ -52,8 +50,12 @@ int main(int argc, char **argv)
     }
     string dataset_dim = argv[1];
 
-    bool testing = false; // switch between dataset for testing and original dataset
     // int err;              // used for MPI error messages
+
+    // Load dataset variables
+    const string dataset_path = "dataset/";
+    const string csv_path = dataset_path + "collisions_" + dataset_dim + ".csv";
+    int csv_size = 0;
 
     // Support dictonaries
     int indexCF = 0;
@@ -62,10 +64,7 @@ int main(int argc, char **argv)
     int indexBrgh = 0;
     map<string, int> brghDictionary;
 
-    // Load dataset variables
-    const string dataset_path = "dataset/";
-    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "collisions_" + dataset_dim + ".csv";
-
+    // Local data structures
     vector<CSVRow> localRows;
 
     // Timing stats variables
@@ -83,18 +82,24 @@ int main(int argc, char **argv)
     // [1] Loading data from file
     loadBegin = cpuSecond();
 
+    cout << "Started loading dataset..." << endl;
     ifstream file(csv_path);
     CSVRow row;
-    for (CSVIterator loop(file); loop != CSVIterator(); loop++)
+    for (CSVIterator loop(file); loop != CSVIterator(); ++loop)
     {
-        if (!(*loop)[DATE].compare("DATE")) // TODO find a better way to skip header
+        if (!(*loop)[TIME].compare("TIME")) // TODO: find a nicer way to skip the header
             continue;
 
         row = (*loop);
-        localRows.push_back(row);
-
         string borough = row[BOROUGH];
         vector<string> cfs = row.getContributingFactors();
+
+        for (unsigned int k = 0; k < cfs.size(); k++)
+        {
+            // Populating dictionary for QUERY2
+            if (cfDictionary.find(cfs[k]) == cfDictionary.end())
+                cfDictionary.insert({cfs[k], indexCF++});
+        }
 
         if (!borough.empty())
         {
@@ -103,32 +108,28 @@ int main(int argc, char **argv)
                 brghDictionary.insert({borough, indexBrgh++});
         }
 
-        for (unsigned int k = 0; k < cfs.size(); k++)
-        {
-            // Populating dictionary for QUERY2
-            if (cfDictionary.find(cfs[k]) == cfDictionary.end())
-                cfDictionary.insert({cfs[k], indexCF++});
-        }
+        localRows.push_back(row);
     }
+    csv_size = localRows.size();
 
     loadDuration = cpuSecond() - loadBegin;
 
     // [2] Data processing
     procBegin = cpuSecond();
 
+    cout << "Started processing dataset..." << endl;
+
     // Every worker will compute in the final datastructure the num of lethal accidents for its sub-dataset and then Reduce it to allow the master to collect final results
-    for (unsigned int i = 0; i < localRows.size(); i++)
+    for (int i = 0; i < csv_size; i++)
     {
-        CSVRow row = localRows[i];
-
         int cfIndex, brghIndex = 0; // used for indexing the two dictionaries
-        int lethal = (row.getNumPersonsKilled() > 0) ? 1 : 0;
-        string borough = row[BOROUGH];
-        vector<string> cfs = row.getContributingFactors();
+        int lethal = (localRows[i].getNumPersonsKilled() > 0) ? 1 : 0;
+        string borough = localRows[i][BOROUGH];
+        vector<string> cfs = localRows[i].getContributingFactors();
 
-        int week = getWeek(row[DATE]);
-        int month = getMonth(row[DATE]);
-        int year = getYear(row[DATE]);
+        int week = getWeek(localRows[i][DATE]);
+        int month = getMonth(localRows[i][DATE]);
+        int year = getYear(localRows[i][DATE]);
 
         // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
         // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
@@ -189,7 +190,7 @@ int main(int argc, char **argv)
             }
         }
     }
-    outFile << "\nTotal weeks: " << totalWeeks << "\t\t\tTotal accidents: " << totalAccidents << "\n\n\n";
+    outFile << "Total weeks: " << totalWeeks << "\t\t\tTotal accidents: " << totalAccidents << "\n\n\n";
 
     // Print Query2 results
     outFile << "********* QUERY 2 *********" << endl;
@@ -201,7 +202,7 @@ int main(int argc, char **argv)
                 << "\t\t\t\t\tPerc. lethal accidents: " << setprecision(4) << fixed << perc * 100 << "%"
                 << endl;
     }
-    outFile << "Total CF parsed: " << cfDictionary.size() << "\n\n\n";
+    outFile << "\nTotal contributing factors parsed: " << cfDictionary.size() << "\n\n\n";
 
     // Print Query3 results
     outFile << "********* QUERY 3 *********" << endl;
@@ -229,8 +230,9 @@ int main(int argc, char **argv)
         double avg = numLethalAccidents / numWeeks;
         outFile << "[" << b.first << "] Avg. lethal accidents per week is: " << setprecision(2) << fixed << avg * 100 << "%";
         outFile << "\t\t\tNum. accidents: " << numAccidents << "\t\tNum. lethal accidents: " << setprecision(0) << fixed << numLethalAccidents << endl;
+        outFile << endl;
     }
-    outFile << "\nTotal boroughs parsed: " << brghDictionary.size() << "\n\n\n";
+    outFile << "Total boroughs parsed: " << brghDictionary.size() << "\n\n\n";
     outFile.close();
 
     writeDuration = cpuSecond() - writeBegin;
@@ -247,15 +249,20 @@ int main(int argc, char **argv)
     cout << "took overall " << overallDuration << " seconds" << endl;
 
     // Open result file
-    ifstream checkFile("stats/stats_serial_" + dataset_dim + ".csv");
+    string statsFileName = "stats_serial_" + dataset_dim + "_1p_1t.csv";
+    ifstream checkFile("stats/" + statsFileName);
     if (!checkFile.good())
     {
         // if csv doesn't exists create file and add header first
-        ofstream statsFile("stats/stats_serial_" + dataset_dim + ".csv");
-        statsFile << "Loading,ProcessingWriting,Overall" << endl;
-        statsFile.close();
+        ofstream outFile("stats/" + statsFileName);
+        outFile << "Loading,Processing,Writing,Overall" << endl;
+        outFile.close();
     }
-    ofstream statsFile("stats/stats_serial_" + dataset_dim + ".csv", ios::app);
-    statsFile << loadDuration << "," << procDuration << "," << writeDuration << "," << overallDuration << endl;
+
+    ofstream statsFile("stats/" + statsFileName, ios::app);
+    statsFile << loadDuration << ","
+              << procDuration << ","
+              << writeDuration << ","
+              << overallDuration << endl;
     statsFile.close();
 }
