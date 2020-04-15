@@ -2,10 +2,29 @@
 #define UTILITY_H
 
 #include <iomanip>
+#include <iostream>
 #include <string>
 #include <sstream>
 #include <map>
 #include <sys/time.h>
+
+/* days per month -- nonleap! */
+const short __spm[13] =
+    {
+        0,
+        (31),
+        (31 + 28),
+        (31 + 28 + 31),
+        (31 + 28 + 31 + 30),
+        (31 + 28 + 31 + 30 + 31),
+        (31 + 28 + 31 + 30 + 31 + 30),
+        (31 + 28 + 31 + 30 + 31 + 30 + 31),
+        (31 + 28 + 31 + 30 + 31 + 30 + 31 + 31),
+        (31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30),
+        (31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31),
+        (31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30),
+        (31 + 28 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30 + 31),
+};
 
 // Utility enumeration for indexing the csv file
 enum CSV_INDEXES
