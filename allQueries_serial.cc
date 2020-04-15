@@ -45,7 +45,13 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-    string dataset_dim = "1M";
+    if (argc != 2)
+    {
+        cout << "Usage: " << argv[0] << " <dataset_dimension>" << endl;
+        exit(-1);
+    }
+    string dataset_dim = argv[1];
+
     bool testing = false; // switch between dataset for testing and original dataset
     // int err;              // used for MPI error messages
 
@@ -246,7 +252,7 @@ int main(int argc, char **argv)
     {
         // if csv doesn't exists create file and add header first
         ofstream statsFile("stats/stats_serial_" + dataset_dim + ".csv");
-        statsFile << "Loading, Processing, Writing, Overall" << endl;
+        statsFile << "Loading,ProcessingWriting,Overall" << endl;
         statsFile.close();
     }
     ofstream statsFile("stats/stats_serial_" + dataset_dim + ".csv", ios::app);
