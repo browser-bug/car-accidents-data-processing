@@ -13,8 +13,6 @@
 
 #include "../utilities/csv_row/CSVIterator.h"
 
-#define DEBUG 0
-
 // Dataset
 #define ORIGINAL_SIZE 955928
 #define TEST_SIZE 29999
@@ -68,13 +66,17 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-    bool testing = false; // switch between dataset for testing and original dataset
-    // int err;             // used for MPI error messages
+    if (argc != 2)
+    {
+        cout << "Usage: " << argv[0] << " <dataset_dimension>" << endl;
+        exit(-1);
+    }
+    string dataset_dim = argv[1];
 
     // Load dataset variables
-    int csv_size = testing ? TEST_SIZE : ORIGINAL_SIZE;
     const string dataset_path = "../dataset/";
-    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "collisions_1M.csv";
+    const string csv_path = dataset_path + "collisions_" + dataset_dim + ".csv";
+    int csv_size = 0;
 
     // Support dictionaries
     int indexBrgh = 0;
@@ -109,17 +111,6 @@ int main(int argc, char **argv)
     MPI_Op accPairSum;
 
     MPI_Init(&argc, &argv);
-
-    if (DEBUG)
-    {
-        volatile int ifl = 0;
-        char hostname[256];
-        gethostname(hostname, sizeof(hostname));
-        printf("PID %d on %s ready for attach\n", getpid(), hostname);
-        fflush(stdout);
-        while (0 == ifl)
-            sleep(5);
-    }
 
     MPI_Comm_size(MPI_COMM_WORLD, &num_workers);
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
@@ -157,10 +148,47 @@ int main(int argc, char **argv)
         writeTimes = new double[num_workers]();
     }
 
-    overallBegin = cpuSecond();
+    overallBegin = MPI_Wtime();
+
+    // [1] Loading data from file
+    loadBegin = MPI_Wtime();
+
+    if (myrank == 0)
+    {
+        cout << "[Proc. " + to_string(myrank) + "] Started loading dataset..." << endl;
+        ifstream file(csv_path);
+        CSVRow row;
+        for (CSVIterator loop(file); loop != CSVIterator(); ++loop)
+        {
+            if (!(*loop)[TIME].compare("TIME")) // TODO: find a nicer way to skip the header
+                continue;
+
+            row = (*loop);
+
+            string date = row[DATE];
+            string borough = row[BOROUGH];
+            Row newRow(row.getNumPersonsKilled());
+            strncpy(newRow.date, date.c_str(), DATE_LENGTH);
+
+            if (!borough.empty())
+            {
+                strncpy(newRow.borough, borough.c_str(), MAX_BOROUGH_LENGTH);
+
+                // Populating dictionary for QUERY3
+                if (brghDictionary.find(borough) == brghDictionary.end())
+                    brghDictionary.insert({borough, indexBrgh++});
+            }
+
+            dataScatter.push_back(newRow);
+        }
+        csv_size = dataScatter.size();
+    }
+
+    loadDuration = MPI_Wtime() - loadBegin;
+    MPI_Gather(&loadDuration, 1, MPI_DOUBLE, loadTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Initialization for scattering, evenly dividing dataset
-    scatterBegin = cpuSecond();
+    scatterBegin = MPI_Wtime();
 
     // Initialization for scattering, evenly dividing dataset
     if (myrank == 0)
@@ -188,47 +216,7 @@ int main(int argc, char **argv)
         MPI_Recv(&my_row_displ, 1, MPI_INT, 0, 14, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 
-    scatterDuration = cpuSecond() - scatterBegin;
-
-    // [1] Loading data from file
-    loadBegin = cpuSecond();
-
-    if (myrank == 0)
-    {
-        ifstream file(csv_path);
-        CSVRow row;
-
-        for (int i = 0; i < csv_size; i++)
-        {
-            if (i == 0)
-                file >> row >> row; // skip the header
-            else
-                file >> row;
-
-            string date = row[DATE];
-            string borough = row[BOROUGH];
-            Row newRow(row.getNumPersonsKilled());
-            strncpy(newRow.date, date.c_str(), DATE_LENGTH);
-
-            if (!borough.empty())
-            {
-                strncpy(newRow.borough, borough.c_str(), MAX_BOROUGH_LENGTH);
-
-                // Populating dictionary for QUERY3
-                if (brghDictionary.find(borough) == brghDictionary.end())
-                    brghDictionary.insert({borough, indexBrgh++});
-            }
-
-            dataScatter.push_back(newRow);
-        }
-    }
-
-    loadDuration = cpuSecond() - loadBegin;
-    MPI_Gather(&loadDuration, 1, MPI_DOUBLE, loadTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
     // Broadcasting the dictionaries to all processes
-    scatterBegin = cpuSecond();
-
     if (myrank == 0)
     {
         num_brgh = brghDictionary.size();
@@ -261,47 +249,55 @@ int main(int argc, char **argv)
     localRows.resize(my_num_rows);
     MPI_Scatterv(dataScatter.data(), scatterCount, dataDispl, rowType, localRows.data(), my_num_rows, rowType, 0, MPI_COMM_WORLD);
 
-    scatterDuration += cpuSecond() - scatterBegin;
+    scatterDuration = MPI_Wtime() - scatterBegin;
     MPI_Gather(&scatterDuration, 1, MPI_DOUBLE, scatterTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // [2] Data processing
-    procBegin = cpuSecond();
+    procBegin = MPI_Wtime();
+
+    cout << "[Proc. " + to_string(myrank) + "] Started processing dataset..." << endl;
+    int brghIndex;
 
     // Every worker will compute in the final datastructure the num of lethal accidents for its sub-dataset and then Reduce it to allow the master to collect final results
     for (int i = 0; i < my_num_rows; i++)
     {
-        string borough = string(localRows[i].borough);
-        if (borough.empty()) // if borough is not specified we're not interested
-            continue;
-
         int lethal = (localRows[i].num_pers_killed > 0) ? 1 : 0;
+        string borough = string(localRows[i].borough);
+        int week, year, month = 0;
 
-        int year = getYear(localRows[i].date); // used for indexing final data structure
-        int week = getWeek(localRows[i].date); // used for indexing final data structure
-        int month = getMonth(localRows[i].date);
+        if (!borough.empty())
+        {
+            week = getWeek(localRows[i].date);
+            year = getYear(localRows[i].date);
+            month = getMonth(localRows[i].date);
 
-        // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
-        // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
-        if (week == 1 && month == 12)
-            year++;
-        else if ((week == 52 || week == 53) && month == 1)
-            year--;
+            // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
+            // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
+            if (week == 1 && month == 12)
+                year++;
+            else if ((week == 52 || week == 53) && month == 1)
+                year--;
 
-        year = year - 2012;
-        week = week - 1;
+            year = year - 2012;
+            week = week - 1;
+        }
 
-        int index = brghDictionary.at(borough);
-        local_boroughWeekAcc[index][year][week].numAccidents++;
-        local_boroughWeekAcc[index][year][week].numLethalAccidents += lethal;
+        /* Query3 */
+        if (!borough.empty()) // if borough is not specified we're not interested
+        {
+            brghIndex = brghDictionary.at(borough);
+            local_boroughWeekAcc[brghIndex][year][week].numAccidents++;
+            local_boroughWeekAcc[brghIndex][year][week].numLethalAccidents += lethal;
+        }
     }
 
     MPI_Reduce(local_boroughWeekAcc, global_boroughWeekAc, NUM_BOROUGH * NUM_YEARS * NUM_WEEKS_PER_YEAR, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
 
-    procDuration = cpuSecond() - procBegin;
+    procDuration = MPI_Wtime() - procBegin;
     MPI_Gather(&procDuration, 1, MPI_DOUBLE, procTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // [3] Output results
-    writeBegin = cpuSecond();
+    writeBegin = MPI_Wtime();
 
     if (myrank == 0)
     {
@@ -336,10 +332,10 @@ int main(int argc, char **argv)
         cout << "Total boroughs parsed: " << brghDictionary.size() << "\n\n\n";
     }
 
-    writeDuration = cpuSecond() - writeBegin;
+    writeDuration = MPI_Wtime() - writeBegin;
     MPI_Gather(&writeDuration, 1, MPI_DOUBLE, writeTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    overallDuration = cpuSecond() - overallBegin;
+    overallDuration = MPI_Wtime() - overallBegin;
     MPI_Gather(&overallDuration, 1, MPI_DOUBLE, overallTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // Print statistics
@@ -349,13 +345,17 @@ int main(int argc, char **argv)
         cout << "********* Timing Statistics *********" << endl;
         cout << "NUM. MPI PROCESSES:\t" << num_workers << endl;
 
-        double avgOverall, avgLoading, avgProcessing, avgWriting = 0;
+        double avgOverall, avgLoading, avgScattering, avgProcessing, avgWriting = 0;
         for (int i = 0; i < num_workers; i++)
         {
             cout << "Process {" << i << "}\t";
             if (i == 0)
                 cout << "Loading(" << loadTimes[i] << "), ";
-            cout << "Scattering(" << scatterTimes[i] << "), ";
+            if (i != 0)
+            {
+                cout << "Scattering(" << scatterTimes[i] << "), ";
+                avgScattering += scatterTimes[i];
+            }
             cout << "Processing(" << procTimes[i] << "), ";
             if (i == 0)
                 cout << "Writing(" << writeTimes[i] << "), ";
@@ -368,9 +368,10 @@ int main(int argc, char **argv)
         }
         cout << endl
              << "With average times of: "
-             //  << "[1] Loading(" << avgLoading / num_workers << "), "
+             << "[1] Loading(" << loadTimes[0] << "), "
+             << "[1a] Scattering(" << (avgScattering / (num_workers - 1)) << "), "
              << "[2] Processing(" << avgProcessing / num_workers << "), "
-             //  << "[3] Writing(" << avgWriting / num_workers << ") and \t"
+             << "[3] Writing(" << writeTimes[0] << ") and \t"
              << "overall(" << avgOverall / num_workers << ").\n";
     }
 

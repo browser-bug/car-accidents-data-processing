@@ -1,3 +1,4 @@
+#include <omp.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -5,6 +6,7 @@
 #include <map>
 #include <list>
 #include <algorithm>
+#include <math.h>
 #include <string>
 #include <string.h> // for string copy
 #include <unistd.h> // for debugging
@@ -32,11 +34,24 @@ typedef struct AccPair
     int numLethalAccidents;
 } AccPair;
 
+AccPair &operator+=(AccPair &out, const AccPair &in)
+{
+    out.numAccidents += in.numAccidents;
+    out.numLethalAccidents += in.numLethalAccidents;
+    return out;
+}
+
 using namespace std;
 
 int main(int argc, char **argv)
 {
-    int num_omp_threads = 4; // TODO this will be assigned by user input
+    if (argc != 3)
+    {
+        cout << "Usage: " << argv[0] << " <num_omp_threads> <dataset_dimension>" << endl;
+        exit(-1);
+    }
+    int num_omp_threads = stoi(argv[1]);
+    string dataset_dim = argv[2];
 
     bool testing = false; // switch between dataset for testing and original dataset
     // int err;              // used for MPI error messages
@@ -46,11 +61,9 @@ int main(int argc, char **argv)
     map<string, int> cfDictionary;
 
     // Load dataset variables
-    // TODO : maybe the csv_size can be specified at runtime by user
-    int csv_size = testing ? TEST_SIZE : ORIGINAL_SIZE;
-    // csv_size = 29996; // Set the first N rows to be read
     const string dataset_path = "../dataset/";
-    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "collisions_1M.csv";
+    const string csv_path = testing ? dataset_path + "data_test.csv" : dataset_path + "collisions_" + dataset_dim + ".csv";
+    int my_num_rows;
 
     vector<CSVRow> localRows;
 
@@ -67,15 +80,15 @@ int main(int argc, char **argv)
     // [1] Loading data from file
     loadBegin = cpuSecond();
 
+    cout << "Started loading dataset... " << endl;
     ifstream file(csv_path);
     CSVRow row;
-    for (int i = 0; i < csv_size; i++)
+    for (CSVIterator loop(file); loop != CSVIterator(); ++loop)
     {
-        if (i == 0)
-            file >> row >> row; // skip the header
-        else
-            file >> row;
+        if (!(*loop)[TIME].compare("TIME")) // TODO: find a nicer way to skip the header
+            continue;
 
+        row = (*loop);
         localRows.push_back(row);
 
         vector<string> cfs = row.getContributingFactors();
@@ -87,43 +100,33 @@ int main(int argc, char **argv)
                 cfDictionary.insert({cfs[k], indexCF++});
         }
     }
+    my_num_rows = localRows.size();
 
     loadDuration = cpuSecond() - loadBegin;
 
     // [2] Data processing
     procBegin = cpuSecond();
 
+    int dynChunk = (int)round(my_num_rows * 0.02); // this tunes the chunk size exploited by dynamic scheduling based on percentage
+    cout << "Started processing dataset with " << dynChunk << " dynamic chunk size..." << endl;
+    omp_set_num_threads(num_omp_threads);
+#pragma omp declare reduction(pairSum:AccPair \
+                              : omp_out += omp_in)
+
     // Every worker will compute in the final datastructure the num of lethal accidents for its sub-dataset and then Reduce it to allow the master to collect final results
-#pragma omp parallel for shared(local_accAndPerc)
-    for (unsigned int i = 0; i < localRows.size(); i++)
+#pragma omp parallel for default(shared) schedule(dynamic, dynChunk) reduction(pairSum \
+                                                                               : local_accAndPerc)
+    for (int i = 0; i < my_num_rows; i++)
     {
-        CSVRow row = localRows[i];
-
         int cfIndex = 0; // used for indexing the two dictionaries
-        int lethal = (row.getNumPersonsKilled() > 0) ? 1 : 0;
-        vector<string> cfs = row.getContributingFactors();
-
-        int week = getWeek(row[DATE]);
-        int month = getMonth(row[DATE]);
-        int year = getYear(row[DATE]);
-
-        // If I'm week = 1 and month = 12, this means I belong to the first week of the next year.
-        // If I'm week = (52 or 53) and month = 01, this means I belong to the last week of the previous year.
-        if (week == 1 && month == 12)
-            year++;
-        else if ((week == 52 || week == 53) && month == 1)
-            year--;
-
-        year = year - 2012;
-        week = week - 1;
+        int lethal = (localRows[i].getNumPersonsKilled() > 0) ? 1 : 0;
+        vector<string> cfs = localRows[i].getContributingFactors();
 
         /* Query2 */
         for (unsigned int k = 0; k < cfs.size(); k++)
         {
             cfIndex = cfDictionary.at(cfs[k]);
-#pragma omp atomic
             (local_accAndPerc[cfIndex].numAccidents)++;
-#pragma omp atomic
             (local_accAndPerc[cfIndex].numLethalAccidents) += lethal;
         }
     }
