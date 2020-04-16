@@ -239,9 +239,9 @@ int main(int argc, char **argv)
     }
 
     loadDuration = MPI_Wtime() - loadBegin;
-    if (myrank == 0)
-        cout << "[" << myrank << "] LOADTIME -------------->" << loadDuration << endl;
     MPI_Gather(&loadDuration, 1, MPI_DOUBLE, loadTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    MPI_Barrier(MPI_COMM_WORLD); /* wait for master to complete reading */
 
     // Initialization for scattering, evenly dividing dataset
     scatterBegin = MPI_Wtime();

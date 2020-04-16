@@ -187,6 +187,8 @@ int main(int argc, char **argv)
     loadDuration = MPI_Wtime() - loadBegin;
     MPI_Gather(&loadDuration, 1, MPI_DOUBLE, loadTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
+    MPI_Barrier(MPI_COMM_WORLD); /* wait for master to complete reading */
+
     // Initialization for scattering, evenly dividing dataset
     scatterBegin = MPI_Wtime();
 
@@ -369,7 +371,7 @@ int main(int argc, char **argv)
         cout << endl
              << "With average times of: "
              << "[1] Loading(" << loadTimes[0] << "), "
-             << "[1a] Scattering(" << (avgScattering / (num_workers - 1)) << "), "
+             << "[1a] Scattering(" << (num_workers > 1 ? avgScattering / (num_workers - 1) : 0) << "), "
              << "[2] Processing(" << avgProcessing / num_workers << "), "
              << "[3] Writing(" << writeTimes[0] << ") and \t"
              << "overall(" << avgOverall / num_workers << ").\n";

@@ -308,6 +308,8 @@ int main(int argc, char **argv)
     loadDuration = MPI_Wtime() - loadBegin;
     MPI_Gather(&loadDuration, 1, MPI_DOUBLE, loadTimes, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
+    MPI_Barrier(MPI_COMM_WORLD); /* wait for master to complete reading */
+
     // Broadcasting the dictionaries to all processes
     scatterBegin = MPI_Wtime();
 
