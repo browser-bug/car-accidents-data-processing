@@ -26,6 +26,9 @@
 *.a
 *.lib
 
+# CMakeLists
+build
+
 # Executables
 *.exe
 *.out
