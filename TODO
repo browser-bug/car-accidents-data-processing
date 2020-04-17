@@ -79,6 +79,7 @@ Todo:
           Vogliamo tunare questi parametri per trovare quelli che ci forniscono il tempo d'esecuzione migliore. Più semplicemente vogliamo fare un'analisi di scalabilità andando ad aumentare il numero di nodi a seconda dei valori assunti da questi paramentri.
 
       ☐ Perché la loading time con la monoread aumenta all'aumentare del numero di processi? @started(20-04-14 17:02)
+        Una possibile spiegazione è che l'alto overhead introdotto dall'aumento del numero di processi porta ogni esecuzione ad essere più lenta per l'elevato numero di messaggi scambiati. Questo porblema teoricamente si dovrebbe riuscire a risolvere con un deploy su cloud in cui ogni VM ha un'esecuzione totalmente indipendente.
       
       ☐ Modulare il codice creando funzioni d'appoggio o anche nuove classi per avere un codice più pulito e poter distribuire meglio i vari sotto processi @started(20-03-12 11:33)
 
@@ -94,7 +95,10 @@ Todo:
         
       ✔ Verificare se sia possibile spostare i processi su più macchine (MPI) @started(20-03-16 15:41) @done(20-03-31 12:29) @lasted(2w19h48m8s)
       
-      ☐ Add a CMakeFiles @started(20-04-16 10:10)
+      ✔ Add a CMakeList @started(20-04-16 10:10) @done(20-04-17 19:47) @lasted(1d9h37m53s)
+        ☐ Come aggiungere una shared lib e una cartella include per far si che anche le cartelle MPI e OpenMP possano usarli? @started(20-04-17 19:47)
+
+
       
 Minors:
       ✘ Aggiungere al codice dell'error handling (es MPI_SUCCESS returns etc.) @started(20-03-12 01:40) @cancelled(20-04-14 14:07) @wasted(4w5d11h27m35s)
