@@ -12,7 +12,7 @@
 #include <unistd.h> // for debugging
 #include <cstddef>
 
-#include "../utilities/csv_row/CSVIterator.h"
+#include "../utilities/csv_row/include/CSVIterator.h"
 
 #define DEBUG 0
 

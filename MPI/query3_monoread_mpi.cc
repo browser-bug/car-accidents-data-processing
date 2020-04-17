@@ -11,7 +11,7 @@
 #include <unistd.h> // for debugging
 #include <cstddef>
 
-#include "../utilities/csv_row/CSVIterator.h"
+#include "../utilities/csv_row/include/CSVIterator.h"
 
 // Dataset
 #define ORIGINAL_SIZE 955928
