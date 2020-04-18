@@ -38,17 +38,23 @@ def main(argv):
         # Overall
         ax1.title.set_text("Overall times")
         overallTimes = gp['OVERALL'].tolist()
-        ax1.plot(num_proc,
-                 overallTimes,
-                 label=f'#threads {num_threads}',
-                 marker='*')
+        if mode not in "serial":
+            ax1.plot(num_proc,
+                     overallTimes,
+                     label=f'#threads {num_threads}',
+                     marker='*')
+        else:
+            ax1.bar(num_proc, overallTimes, width=0.2)
         ax1.set_xticks(num_proc)
 
         # Loading
         if i == 0:  # we need just one since num.threads doesn't affect loading times
             ax2.title.set_text("Loading times")
             loadTimes = gp['LOADING'].tolist()
-            ax2.plot(num_proc, loadTimes, marker='*')
+            if mode not in "serial":
+                ax2.plot(num_proc, loadTimes, marker='*')
+            else:
+                ax2.bar(num_proc, loadTimes, width=0.2)
             ax2.set_xticks(num_proc)
 
         # Scattering
@@ -61,10 +67,13 @@ def main(argv):
         # Processing
         ax4.title.set_text("Processing times")
         procTimes = gp['PROCESSING'].tolist()
-        ax4.plot(num_proc,
-                 procTimes,
-                 label=f'#threads {num_threads}',
-                 marker='*')
+        if mode not in "serial":
+            ax4.plot(num_proc,
+                     procTimes,
+                     label=f'#threads {num_threads}',
+                     marker='*')
+        else:
+            ax4.bar(num_proc, procTimes, width=0.2)
         ax4.set_xticks(num_proc)
 
     totalOverallTimes = df['OVERALL'].tolist()

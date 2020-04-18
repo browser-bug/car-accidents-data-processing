@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 import textwrap
-import time
+import time, datetime
 
 # this wraps output messages such that each line is at most width characters long.
 wrapper = textwrap.TextWrapper(width=80, replace_whitespace=False)
@@ -66,8 +66,13 @@ def main(argv):
         sys.exit(1)
 
     binaryFileMode = getBinaryFileMode(binaryFile)
+    # if serial mode set num. of process and threads
+    if (binaryFileMode == 'serial'):
+        maxNumProcess = 1
+        maxNumThreads = 1
+
     # Cleaning old stats
-    for filename in glob.glob(f"stats/final_{binaryFileMode}_{dimension}*"):
+    for filename in glob.glob(f"stats/*_{binaryFileMode}_{dimension}*"):
         os.remove(filename)
 
     startingTime = time.perf_counter()
@@ -76,17 +81,19 @@ def main(argv):
         for numthreads in range(1, maxNumThreads + 1):
             runningMessage = f"Starting {binaryFile} for {numiter} iterations with {numprocess} MPI processes, {numthreads} OpenMP threads, {dimension} dataset size"
             print(runningMessage)
-            runCommand = [
-                "mpirun", "-n", f"{numprocess}", "-f", f"{hostFile}",
-                f"./{binaryFile}", f"{numthreads}", f"{dimension}"
-            ] if (hostFile) else [
-                "mpirun", "-n", f"{numprocess}", f"./{binaryFile}",
-                f"{numthreads}", f"{dimension}"
-            ]
+
+            if binaryFileMode == 'serial':
+                runCommand = f"./{binaryFile} {dimension}"
+            else:
+                runCommand = f"mpirun -n f{numprocess}" + \
+                    f"-f {hostFile}" if hostFile else  "" + \
+                    f"./{binaryFile} {numthreads} {dimension}"
+
             for _ in tqdm(range(numiter)):
                 subprocess.run(runCommand,
                                cwd=(binaryFilePath.absolute().parent),
-                               stdout=DEVNULL)
+                               stdout=DEVNULL,
+                               shell=True)
 
             # Collecting statistics
             statsFile = f"stats/stats_{binaryFileMode}_{dimension}_{numprocess}p_{numthreads}t.csv"
@@ -128,9 +135,13 @@ def main(argv):
                                    header=False,
                                    index=False)
 
-    # Wrapping up
-    durationTime = time.perf_counter() - startingTime
-    print(f"Done. Time elapsed {durationTime} seconds")
+    # Printing time duration
+    durationTime = datetime.timedelta(seconds=(time.perf_counter() -
+                                               startingTime))
+    hours = durationTime.seconds // 3600
+    minutes = (durationTime.seconds % 60) // 60
+    seconds = durationTime.seconds % 60
+    print(f"Done. Time elapsed: {hours}:{minutes}:{seconds}")
 
     # Cleaning garbage files
     for filename in glob.glob(f"stats/stats_{binaryFileMode}*"):
