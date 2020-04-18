@@ -422,9 +422,7 @@ int main(int argc, char **argv)
     int dynChunk = (int)round(my_num_rows * 0.02); // this tunes the chunk size exploited by dynamic scheduling based on percentage
 
 // Every worker will compute in the final datastructure the num of lethal accidents for its sub-dataset and then Reduce it to allow the master to collect final results
-#pragma omp parallel for default(shared) schedule(dynamic, dynChunk) private(cfIndex, brghIndex) reduction(+                                            \
-                                                                                                           : local_lethAccPerWeek) reduction(accPairSum \
-                                                                                                                                             : local_accAndPerc, local_boroughWeekAcc)
+#pragma omp parallel for default(shared) schedule(dynamic, dynChunk) private(cfIndex, brghIndex) reduction(+ : local_lethAccPerWeek) reduction(accPairSum : local_accAndPerc, local_boroughWeekAcc)
     for (int i = 0; i < my_num_rows; i++)
     {
         int lethal = (localRows[i].num_pers_killed > 0) ? 1 : 0;
