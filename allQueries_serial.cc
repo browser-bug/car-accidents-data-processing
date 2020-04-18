@@ -255,12 +255,13 @@ int main(int argc, char **argv)
     {
         // if csv doesn't exists create file and add header first
         ofstream outFile("stats/" + statsFileName);
-        outFile << "Loading,Processing,Writing,Overall" << endl;
+        outFile << "Loading,Scattering,Processing,Writing,Overall" << endl;
         outFile.close();
     }
 
     ofstream statsFile("stats/" + statsFileName, ios::app);
     statsFile << loadDuration << ","
+              << 0 << ","
               << procDuration << ","
               << writeDuration << ","
               << overallDuration << endl;
