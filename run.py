@@ -162,16 +162,16 @@ def usage():
     word_list = wrapper.wrap(text=descriptionMessage)
     for line in word_list:
         print(line)
-    usageMessage = "\nUsage:\trun.py binaryFile_name [global-opts] <global-args>"
+    usageMessage = "\nUsage:\trun.py [global-opts] <global-args> binary_file"
     print(usageMessage)
     optionsMessage = """Options:
 -h, --help\t\tshow this help message
 -p, --numprocess\tselect max. number of MPI process you want to run (default 4)
 -t, --numthreads\tselect max. number of OpenMP threads to spawn for each process (default 4)
 -d, --dimension\t\tset the dataset size to work on (default: 1M)
--i, --numiter\t\tset the number of iteration to execute for each testcase (default: 10)   
+-i, --numiter\t\tset the number of iterations to execute for each testcase (default: 10)   
 -f, --hostfile\t\thost file used by mpirun
--t,--test\t\trun with the test (small sized) dataset
+-t, --test\t\trun with the test (small sized) dataset
     """
     print(optionsMessage)
 
