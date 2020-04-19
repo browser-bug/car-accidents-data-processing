@@ -82,12 +82,12 @@ def main(argv):
             runningMessage = f"Starting {binaryFile} for {numiter} iterations with {numprocess} MPI processes, {numthreads} OpenMP threads, {dimension} dataset size"
             print(runningMessage)
 
-            if binaryFileMode == 'serial':
-                runCommand = f"./{binaryFile} {dimension}"
-            else:
-                runCommand = f"mpirun -n f{numprocess}" + \
-                    f"-f {hostFile}" if hostFile else  "" + \
+            if binaryFileMode != "serial":
+                runCommand = f"mpirun -n {numprocess} " + \
+                    (f"-f {hostFile} " if hostFile else  "") + \
                     f"./{binaryFile} {numthreads} {dimension}"
+            else:
+                runCommand = f"./{binaryFile} {dimension}"
 
             for _ in tqdm(range(numiter)):
                 subprocess.run(runCommand,
