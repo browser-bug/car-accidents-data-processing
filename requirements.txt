@@ -1,4 +1,4 @@
-tqdm==4.45.0
-matplotlib==3.2.1
-numpy==1.18.2
-pandas==1.0.3
+tqdm
+matplotlib
+numpy
+pandas
