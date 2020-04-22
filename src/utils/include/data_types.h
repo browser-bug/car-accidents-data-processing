@@ -1,0 +1,77 @@
+#ifndef DATA_TYPES_H
+#define DATA_TYPES_H
+
+#include <mpi.h>
+
+#define DATE_LENGTH 11
+
+#define MAX_CF_PER_ROW 5
+#define MAX_CF_LENGTH 55
+
+#define MAX_BOROUGH_LENGTH 15
+
+// Data structure representing a row used for pre-processing
+typedef struct Row
+{
+    Row() : num_pers_killed(0), num_contributing_factors(0){};
+    Row(int npk,
+        int ncf)
+        : num_pers_killed(npk), num_contributing_factors(ncf){};
+
+    char date[DATE_LENGTH] = {};
+
+    int num_pers_killed;
+
+    char contributing_factors[MAX_CF_PER_ROW][MAX_CF_LENGTH] = {};
+    int num_contributing_factors;
+
+    char borough[MAX_BOROUGH_LENGTH] = {};
+} Row;
+
+typedef struct AccPair
+{
+    AccPair() : numAccidents(0), numLethalAccidents(0){};
+    AccPair(int na,
+            int nla) : numAccidents(na), numLethalAccidents(nla){};
+
+    int numAccidents;
+    int numLethalAccidents;
+} AccPair;
+
+/* User-defind operation to manage the summation of AccPair during OpenMP reduction */
+inline AccPair &operator+=(AccPair &out, const AccPair &in)
+{
+    out.numAccidents += in.numAccidents;
+    out.numLethalAccidents += in.numLethalAccidents;
+    return out;
+}
+
+/* User-defind operation to manage the summation of AccPair during MPI reduction */
+inline void pairSum(void *inputBuffer, void *outputBuffer, int *len, MPI_Datatype *dptr)
+{
+    AccPair *in = (AccPair *)inputBuffer;
+    AccPair *inout = (AccPair *)outputBuffer;
+
+    for (int i = 0; i < *len; ++i)
+    {
+        inout[i].numAccidents += in[i].numAccidents;
+        inout[i].numLethalAccidents += in[i].numLethalAccidents;
+    }
+}
+
+// MPI Datatypes definitions
+int rowLength[] = {
+    DATE_LENGTH,
+    1,
+    MAX_CF_PER_ROW * MAX_CF_LENGTH,
+    1,
+    MAX_BOROUGH_LENGTH};
+MPI_Aint rowDisplacements[] = {
+    offsetof(Row, date),
+    offsetof(Row, num_pers_killed),
+    offsetof(Row, contributing_factors),
+    offsetof(Row, num_contributing_factors),
+    offsetof(Row, borough)};
+MPI_Datatype rowTypes[] = {MPI_CHAR, MPI_INT, MPI_CHAR, MPI_INT, MPI_CHAR};
+
+#endif

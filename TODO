@@ -85,10 +85,13 @@ Todo:
       ☐ Modulare il codice creando funzioni d'appoggio o anche nuove classi per avere un codice più pulito e poter distribuire meglio i vari sotto processi @started(20-03-12 11:33)
         Inserire tutto all'interno di 'results' ?
 
+      ☐ Risolvere il problema dei path per dataset, ecc. @started(20-04-22 18:07)
+
       ✔ Aggiungere uno script python per runnare un binario arbitrario un tot numero di volte con specifici parametri @started(20-04-11 17:48) @done(20-04-14 14:06) @lasted(2d20h18m52s)
         Ad esempio il numero di processi MPI, il numero di therads OpenMP, ecc. ecc.
         ☐ Convertire getopt to argparse (python2 vs python3 parsers) @started(20-04-11 17:48)
           Rafforziamo il parsing aggiungendo la possibilità di rendere delle opzioni obbligatori (es. --hostfile).
+        ☐ Cambiare i binary files da {file} a {./file} e verificare il funzionamento con tutti i test cases @started(20-04-22 17:35)
 
       ✔ Cambia i nomi in MPI e OpenMP folders per renderli conformi alla guida usata (es. _mono_read, multi_read,ecc) @started(20-04-12 12:38) @done(20-04-14 17:01) @lasted(2d4h23m48s)
 
