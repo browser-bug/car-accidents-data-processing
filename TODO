@@ -55,7 +55,7 @@ Todo:
       
       ✔ Lettura dello stesso file da più processi utilizzando MPI_IO() @started(20-03-21 19:32) @done(20-03-21 19:32) @lasted(51s)
 
-      ☐ I buffers per le query sono tutti statici. C'è il modo di rendergli dinamici? @started(20-03-22 11:18)
+      ☐ I buffers per le query sono tutti statici. C'è il modo di renderli dinamici? @started(20-03-22 11:18)
 
       ✔ Trovare un modo per capire il numero di righe del dataset senza utilizzare delle macro preimpostate @started(20-04-04 13:00) @done(20-04-10 17:34) @lasted(6d4h34m6s)
       
@@ -79,7 +79,7 @@ Todo:
         ✔ Parametrizzare il numero di OpenMP threads e il numero di MPI processes  @started(20-03-18 22:42) @done(20-03-19 11:58) @lasted(13h16m1s)
           Vogliamo tunare questi parametri per trovare quelli che ci forniscono il tempo d'esecuzione migliore. Più semplicemente vogliamo fare un'analisi di scalabilità andando ad aumentare il numero di nodi a seconda dei valori assunti da questi paramentri.
 
-      ☐ Perché la loading time con la monoread aumenta all'aumentare del numero di processi? @started(20-04-14 17:02)
+      ✘ Perché la loading time con la monoread aumenta all'aumentare del numero di processi? @started(20-04-14 17:02) @cancelled(20-04-21 16:54) @wasted(6d23h52m28s)
         Una possibile spiegazione è che l'alto overhead introdotto dall'aumento del numero di processi porta ogni esecuzione ad essere più lenta per l'elevato numero di messaggi scambiati. Questo porblema teoricamente si dovrebbe riuscire a risolvere con un deploy su cloud in cui ogni VM ha un'esecuzione totalmente indipendente.
       
       ☐ Modulare il codice creando funzioni d'appoggio o anche nuove classi per avere un codice più pulito e poter distribuire meglio i vari sotto processi @started(20-03-12 11:33)
@@ -98,7 +98,7 @@ Todo:
       ✔ Verificare se sia possibile spostare i processi su più macchine (MPI) @started(20-03-16 15:41) @done(20-03-31 12:29) @lasted(2w19h48m8s)
       
       ✔ Add a CMakeList @started(20-04-16 10:10) @done(20-04-17 19:47) @lasted(1d9h37m53s)
-        ☐ Come aggiungere una shared lib e una cartella include per far si che anche le cartelle MPI e OpenMP possano usarli? @started(20-04-17 19:47)
+        ✔ Come aggiungere una shared lib e una cartella include per far si che anche le cartelle MPI e OpenMP possano usarli? @started(20-04-17 19:47) @done(20-04-22 16:12) @lasted(4d20h25m28s)
 
 
       
