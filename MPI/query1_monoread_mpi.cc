@@ -10,7 +10,7 @@
 #include <string.h> // for string copy
 #include <cstddef>
 
-#include "../utilities/csv_row/include/CSVIterator.h"
+#include "utils/csv_row/CSVIterator.h"
 
 #define ORIGINAL_SIZE 955928
 #define TEST_SIZE 29999

@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 project(car-accidents-data-processing)
 
+set(PROJECT_ROOT "/opt/car-accidents" CACHE STRING "Car-Accidents installation root directory")
+
 # compilation flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11 -fopenmp")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}) # this sets the executables output directory
@@ -9,15 +11,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}) # this sets the execut
 find_package(MPI REQUIRED)
 find_package(OpenMP REQUIRED)
 
-# work on subdirectories first
-add_subdirectory(utilities)
+# work on libraries first
+add_subdirectory(utils)
 
 # list of file paths
-set(UTILITY_PATH ${PROJECT_SOURCE_DIR}/utilities)
-
-# list of source files
-set(UTILITY_SOURCES utility.cc)
-set(CSV_ROW_SOURCES CSVRow.cc)
+set(UTILITY_PATH ${PROJECT_SOURCE_DIR}/utils)
 
 # include directories
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
@@ -40,9 +38,3 @@ endif()
 add_executable (allQueries_multiread.o allQueries_multiread.cc)
 add_executable (allQueries_monoread.o allQueries_monoread.cc)
 add_executable (allQueries_serial.o allQueries_serial.cc)
-
-# subprojects
-add_subdirectory(OpenMP)
-add_subdirectory(MPI)
-
-

@@ -10,7 +10,7 @@
 #include <string.h> // for string copy
 #include <cstddef>
 
-#include "../utilities/CSVIterator.h"
+#include "utils/csv_row/CSVIterator.h"
 
 #define MAX_CF_LENGTH 55
 

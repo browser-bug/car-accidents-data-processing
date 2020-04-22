@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <string>
 
-#include "../utilities/CSVIterator.h"
+#include "utils/csv_row/CSVIterator.h"
 
 #define ORIGINAL_SIZE 955928
 #define TEST_SIZE 29999
