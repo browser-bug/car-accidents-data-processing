@@ -4,36 +4,37 @@
 
 using namespace std;
 
-bool Scatterer::scatterData(vector<Row> *src, vector<Row> *dest, MPI_Datatype type, int csv_size)
+void Scatterer::scatterData(vector<Row> *src, vector<Row> *dest, MPI_Datatype type, int csv_size)
 {
+    int num_rows = 0;
+    int *sendcounts;
+    int *displs;
+
     if (rank == 0)
     {
-        scatterCount[rank] = csv_size / num_workers + csv_size % num_workers; // TODO maybe change this so master process doesn't get overloaded with too many rows
-        num_rows = scatterCount[rank];
+        num_rows = csv_size / num_workers + csv_size % num_workers; // TODO maybe change this so master process doesn't get overloaded with too many rows
+        sendcounts = new int[num_workers];
+        displs = new int[num_workers];
 
-        dataDispl[rank] = 0;
+        sendcounts[0] = num_rows;
+        displs[0] = 0;
 
-        int datasetOffset = 0;
-        for (int rank = 1; rank < num_workers; rank++)
+        int dataOffset = 0;
+        for (int i = 1; i < num_workers; i++)
         {
-            scatterCount[rank] = csv_size / num_workers;
-            datasetOffset += scatterCount[rank - 1];
-            dataDispl[rank] = datasetOffset;
-
-            MPI_Send(&scatterCount[rank], 1, MPI_INT, rank, 13, comm);
+            sendcounts[i] = csv_size / num_workers;
+            dataOffset += sendcounts[i - 1];
+            displs[i] = dataOffset;
         }
     }
-    else
-    {
-        MPI_Recv(&num_rows, 1, MPI_INT, 0, 13, comm, MPI_STATUS_IGNORE);
-    }
 
-    // Scattering data to all workers
+    MPI_Scatter(sendcounts, 1, MPI_INT, &num_rows, 1, MPI_INT, 0, comm);
     dest->resize(num_rows);
-    MPI_Scatterv(src->data(), scatterCount, dataDispl, type, dest->data(), num_rows, type, 0, comm);
+
+    MPI_Scatterv(src->data(), sendcounts, displs, type, dest->data(), num_rows, type, 0, comm);
 }
 
-bool Scatterer::broadcastDictionary(dictionary &dict, int maxKeyLength)
+void Scatterer::broadcastDictionary(dictionary &dict, int maxKeyLength)
 {
     int numKeys = dict.size();
     MPI_Bcast(&numKeys, 1, MPI_INT, 0, comm);
@@ -67,7 +68,7 @@ bool Scatterer::broadcastDictionary(dictionary &dict, int maxKeyLength)
     delete[] dictValues;
 }
 
-bool Scatterer::mergeDictionary(dictionary &dict, int maxKeyLength)
+void Scatterer::mergeDictionary(dictionary &dict, int maxKeyLength)
 {
     // Calculate destination dictionary size
     int numKeys = dict.size();
