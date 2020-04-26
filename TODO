@@ -82,7 +82,7 @@ Todo:
       ✘ Perché la loading time con la monoread aumenta all'aumentare del numero di processi? @started(20-04-14 17:02) @cancelled(20-04-21 16:54) @wasted(6d23h52m28s)
         Una possibile spiegazione è che l'alto overhead introdotto dall'aumento del numero di processi porta ogni esecuzione ad essere più lenta per l'elevato numero di messaggi scambiati. Questo porblema teoricamente si dovrebbe riuscire a risolvere con un deploy su cloud in cui ogni VM ha un'esecuzione totalmente indipendente.
       
-      ☐ Modulare il codice creando funzioni d'appoggio o anche nuove classi per avere un codice più pulito e poter distribuire meglio i vari sotto processi @started(20-03-12 11:33)
+      ✔ Modulare il codice creando funzioni d'appoggio o anche nuove classi per avere un codice più pulito e poter distribuire meglio i vari sotto processi @started(20-03-12 11:33) @done(20-04-25 16:22) @lasted(6w2d3h49m40s)
         Inserire tutto all'interno di 'results' ?
 
       ☐ Risolvere il problema dei path per dataset, ecc. @started(20-04-22 18:07)
