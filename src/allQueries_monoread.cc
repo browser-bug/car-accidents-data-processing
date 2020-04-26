@@ -1,6 +1,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <math.h>
 
 #include "utils/csv_row/include/CSVIterator.h"
 #include "utils/include/utility.h"
