@@ -7,22 +7,24 @@
 
 #include "Node.h"
 
+using dictionary = std::map<std::string, int>;
+
 class Loader : public Node
 {
 public:
     Loader(int myRank, MPI_Comm myCommunicator, std::string path) : Node(myRank, myCommunicator), csv_path(path) {}
     ~Loader() {}
 
-    bool monoReadDataset(std::vector<Row> &data);
+    void monoReadDataset(std::vector<Row> &data);
     // TODO add stackoverflow credits https://stackoverflow.com/questions/12939279/mpi-reading-from-a-text-file
-    bool multiReadDataset(std::vector<Row> &data, int num_workers);
+    void multiReadDataset(std::vector<Row> &data, int num_workers);
 
-    inline std::map<std::string, int> getCFDict()
+    inline dictionary getCFDict()
     {
         return cfDictionary;
     }
 
-    inline std::map<std::string, int> getBRGHDict()
+    inline dictionary getBRGHDict()
     {
         return brghDictionary;
     }
@@ -30,8 +32,8 @@ public:
 private:
     std::string csv_path;
 
-    std::map<std::string, int> cfDictionary;
-    std::map<std::string, int> brghDictionary;
+    dictionary cfDictionary;
+    dictionary brghDictionary;
 };
 
 #endif

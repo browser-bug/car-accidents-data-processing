@@ -6,7 +6,7 @@
 
 using namespace std;
 
-bool Loader::monoReadDataset(vector<Row> &data)
+void Loader::monoReadDataset(vector<Row> &data)
 {
     cout << "[Proc. " + to_string(rank) + "] Started loading dataset..." << endl;
     ifstream file(csv_path);
@@ -47,7 +47,7 @@ bool Loader::monoReadDataset(vector<Row> &data)
     }
 }
 
-bool Loader::multiReadDataset(vector<Row> &data, int num_workers)
+void Loader::multiReadDataset(vector<Row> &data, int num_workers)
 {
     cout << "[Proc. " + to_string(rank) + "] Started loading dataset..." << endl;
     MPI_File input_file;

@@ -44,11 +44,11 @@ public:
 
     void computeAverages();
 
-    bool setOverallTimes(double *duration);
-    bool setLoadTimes(double *duration);
-    bool setScatterTimes(double *duration);
-    bool setProcTimes(double *duration);
-    bool setWriteTimes(double *duration);
+    void setOverallTimes(double *duration);
+    void setLoadTimes(double *duration);
+    void setScatterTimes(double *duration);
+    void setProcTimes(double *duration);
+    void setWriteTimes(double *duration);
 
     inline bool openFile()
     {
@@ -59,7 +59,7 @@ public:
         return true;
     }
 
-    inline bool closeFile()
+    inline void closeFile()
     {
         outFile.close();
     }

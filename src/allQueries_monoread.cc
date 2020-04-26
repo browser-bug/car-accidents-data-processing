@@ -110,7 +110,7 @@ int main(int argc, char **argv)
     scatterer.broadcastDictionary(brghDictionary, MAX_BOROUGH_LENGTH);
 
     scatterer.scatterData(&dataScatter, &localRows, rowType, csv_size);
-    my_num_rows = scatterer.getNumRows();
+    my_num_rows = localRows.size();
 
     scatterDuration = MPI_Wtime() - scatterBegin;
     stats.setScatterTimes(&scatterDuration);

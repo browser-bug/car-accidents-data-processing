@@ -12,7 +12,6 @@ void Process::processQuery1(const Row &data, int result[][NUM_WEEKS_PER_YEAR])
     if (lethal)
     {
         computeWeekAndYear(data.date, week, year);
-
         result[year][week]++;
     }
 }

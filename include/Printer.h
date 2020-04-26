@@ -37,7 +37,7 @@ public:
         outFile.clear();
         return true;
     }
-    inline bool closeFile()
+    inline void closeFile()
     {
         outFile.close();
     }

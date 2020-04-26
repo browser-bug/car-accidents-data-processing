@@ -63,35 +63,35 @@ int Stats::getNumContributingProcesses(vector<double> &times)
     return count_if(times.begin(), times.end(), [](double i) { return i > 0; });
 }
 
-bool Stats::setOverallTimes(double *duration)
+void Stats::setOverallTimes(double *duration)
 {
     if (num_workers == 1)
         overallTimes[0] = *duration;
     else
         MPI_Gather(duration, 1, MPI_DOUBLE, overallTimes.data(), 1, MPI_DOUBLE, 0, comm);
 }
-bool Stats::setLoadTimes(double *duration)
+void Stats::setLoadTimes(double *duration)
 {
     if (num_workers == 1)
         loadTimes[0] = *duration;
     else
         MPI_Gather(duration, 1, MPI_DOUBLE, loadTimes.data(), 1, MPI_DOUBLE, 0, comm);
 }
-bool Stats::setScatterTimes(double *duration)
+void Stats::setScatterTimes(double *duration)
 {
     if (num_workers == 1)
         scatterTimes[0] = *duration;
     else
         MPI_Gather(duration, 1, MPI_DOUBLE, scatterTimes.data(), 1, MPI_DOUBLE, 0, comm);
 }
-bool Stats::setProcTimes(double *duration)
+void Stats::setProcTimes(double *duration)
 {
     if (num_workers == 1)
         procTimes[0] = *duration;
     else
         MPI_Gather(duration, 1, MPI_DOUBLE, procTimes.data(), 1, MPI_DOUBLE, 0, comm);
 }
-bool Stats::setWriteTimes(double *duration)
+void Stats::setWriteTimes(double *duration)
 {
     if (num_workers == 1)
         writeTimes[0] = *duration;
