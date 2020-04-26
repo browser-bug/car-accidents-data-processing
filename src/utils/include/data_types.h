@@ -3,11 +3,14 @@
 
 #include <mpi.h>
 
-#define DATE_LENGTH 11
+#define NUM_YEARS 6
+#define NUM_WEEKS_PER_YEAR 53
+#define NUM_CONTRIBUTING_FACTORS 47
+#define NUM_BOROUGH 5
 
+#define DATE_LENGTH 11
 #define MAX_CF_PER_ROW 5
 #define MAX_CF_LENGTH 55
-
 #define MAX_BOROUGH_LENGTH 15
 
 // Data structure representing a row used for pre-processing
@@ -59,19 +62,18 @@ inline void pairSum(void *inputBuffer, void *outputBuffer, int *len, MPI_Datatyp
     }
 }
 
-// MPI Datatypes definitions
-int rowLength[] = {
+const int rowLength[] = {
     DATE_LENGTH,
     1,
-    MAX_CF_PER_ROW * MAX_CF_LENGTH,
+    MAX_CF_PER_ROW *MAX_CF_LENGTH,
     1,
     MAX_BOROUGH_LENGTH};
-MPI_Aint rowDisplacements[] = {
+const MPI_Aint rowDisplacements[] = {
     offsetof(Row, date),
     offsetof(Row, num_pers_killed),
     offsetof(Row, contributing_factors),
     offsetof(Row, num_contributing_factors),
     offsetof(Row, borough)};
-MPI_Datatype rowTypes[] = {MPI_CHAR, MPI_INT, MPI_CHAR, MPI_INT, MPI_CHAR};
+const MPI_Datatype rowTypes[] = {MPI_CHAR, MPI_INT, MPI_CHAR, MPI_INT, MPI_CHAR};
 
 #endif
