@@ -7,12 +7,17 @@ import pandas as pd
 from tqdm import tqdm
 import textwrap
 import time, datetime
+import re
 
 # this wraps output messages such that each line is at most width characters long.
 wrapper = textwrap.TextWrapper(width=80, replace_whitespace=False)
 
 
 def main(argv):
+
+    if len(argv) == 1:
+        usage()
+        sys.exit(0)
 
     # Sanity check of arguments
     binaryFile = ''
@@ -24,7 +29,7 @@ def main(argv):
 
     # Remember that "unlike GNU getopt(), after a non-option argument, all further arguments are considered also non-options".
     try:
-        opts, args = getopt.getopt(argv, "p:t:d:i:f:Th", [
+        opts, args = getopt.getopt(argv[1:], "p:t:d:i:f:Th", [
             "numprocess=", "numthreads=", "dimension=", "numiter=",
             "hostfile=", "test", "help"
         ])
@@ -65,6 +70,7 @@ def main(argv):
         print(f"Dataset file ({datasetFile}) doesn't exists...")
         sys.exit(1)
 
+    binaryFileName = os.path.basename(binaryFile)
     binaryFileMode = getBinaryFileMode(binaryFile)
     # if serial mode set num. of process and threads
     if (binaryFileMode == 'serial'):
@@ -85,9 +91,9 @@ def main(argv):
             if binaryFileMode != "serial":
                 runCommand = f"mpirun -n {numprocess} " + \
                     (f"-f {hostFile} " if hostFile else  "") + \
-                    f"./{binaryFile} {numthreads} {dimension}"
+                    f"./{binaryFileName} {numthreads} {dimension}"
             else:
-                runCommand = f"./{binaryFile} {dimension}"
+                runCommand = f"./{binaryFileName} {dimension}"
 
             for _ in tqdm(range(numiter)):
                 subprocess.run(runCommand,
@@ -139,9 +145,9 @@ def main(argv):
     durationTime = datetime.timedelta(seconds=(time.perf_counter() -
                                                startingTime))
     hours = durationTime.seconds // 3600
-    minutes = (durationTime.seconds % 60) // 60
+    minutes = (durationTime.seconds // 60) % 60
     seconds = durationTime.seconds % 60
-    print(f"Done. Time elapsed: {hours}:{minutes}:{seconds}")
+    print(f"Done. Time elapsed: {hours}:{minutes}:{seconds} (h:m:s)")
 
     # Cleaning garbage files
     for filename in glob.glob(f"stats/stats_{binaryFileMode}*"):
@@ -182,10 +188,9 @@ def usage():
 -d, --dimension\t\tset the dataset size to work on (default: 1M)
 -i, --numiter\t\tset the number of iterations to execute for each testcase (default: 10)   
 -f, --hostfile\t\thost file used by mpirun
--t, --test\t\trun with the test (small sized) dataset
-    """
+-t, --test\t\trun with the test (small sized) dataset"""
     print(optionsMessage)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main(sys.argv)
