@@ -1,12 +1,16 @@
-import sys, getopt, argparse
-import os, glob
+import sys
+import getopt
+import argparse
+import os
+import glob
 import subprocess
 from subprocess import DEVNULL, STDOUT, check_call
 from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 import textwrap
-import time, datetime
+import time
+import datetime
 import re
 
 # this wraps output messages such that each line is at most width characters long.
@@ -90,7 +94,7 @@ def main(argv):
 
             if binaryFileMode != "serial":
                 runCommand = f"mpirun -n {numprocess} " + \
-                    (f"-f {hostFile} " if hostFile else  "") + \
+                    (f"-f {hostFile} " if hostFile else "") + \
                     f"./{binaryFileName} {numthreads} {dimension}"
             else:
                 runCommand = f"./{binaryFileName} {dimension}"
@@ -188,7 +192,7 @@ def usage():
 -d, --dimension\t\tset the dataset size to work on (default: 1M)
 -i, --numiter\t\tset the number of iterations to execute for each testcase (default: 10)   
 -f, --hostfile\t\thost file used by mpirun
--t, --test\t\trun with the test (small sized) dataset"""
+-T, --test\t\trun with the test (small sized) dataset"""
     print(optionsMessage)
 
 
