@@ -25,12 +25,15 @@ int main(int argc, char **argv)
     int num_omp_threads = stoi(argv[1]);
     string dataset_dim = argv[2];
 
-    // int err;              // used for MPI error messages
-
     // Load dataset variables
-    const string dataset_path = "../dataset/";
-    const string csv_path = dataset_path + "collisions_" + dataset_dim + ".csv";
+    const string dataset_dir_path = "../dataset/";
+    const string csv_path = dataset_dir_path + "collisions_" + dataset_dim + ".csv";
     int csv_size = 0;
+
+    // Results data
+    int global_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                 // Global data structure for QUERY1
+    AccPair global_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                      // Global data structure for QUERY2
+    AccPair global_boroughWeekAc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Global data structure for QUERY3
 
     // Support dictonaries
     map<string, int> cfDictionary;
@@ -38,10 +41,6 @@ int main(int argc, char **argv)
 
     // MPI variables
     int myrank, num_workers;
-
-    int global_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                 // Global data structure for QUERY1
-    AccPair global_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                      // Global data structure for QUERY2
-    AccPair global_boroughWeekAc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Global data structure for QUERY3
 
     // MPI Datatypes definitions
     MPI_Datatype rowType;
@@ -64,6 +63,9 @@ int main(int argc, char **argv)
     vector<Row> dataScatter;
     vector<Row> localRows;
     int my_num_rows;
+    int local_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                  // Local data structure for QUERY1
+    AccPair local_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                       // Local data structure for QUERY2
+    AccPair local_boroughWeekAcc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Local data structure for QUERY3
 
     // Timing stats variables
     double overallBegin, overallDuration = 0; // overall application duration time
@@ -72,13 +74,10 @@ int main(int argc, char **argv)
     double procBegin, procDuration = 0;       // processing phase duration time
     double writeBegin, writeDuration = 0;     // printing stats duration time
 
-    int local_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                  // Local data structure for QUERY1
-    AccPair local_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                       // Local data structure for QUERY2
-    AccPair local_boroughWeekAcc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Local data structure for QUERY3
-
     // Stats variables
-    string statsFilePath = "../stats/stats_monoread_" + dataset_dim + "_" + to_string(num_workers) + "p_" + to_string(num_omp_threads) + "t.csv";
-    Stats stats(myrank, MPI_COMM_WORLD, num_workers, num_omp_threads, statsFilePath);
+    const string stats_dir_path = "../stats/";
+    const string stats_path = stats_dir_path + "stats_monoread_" + dataset_dim + "_" + to_string(num_workers) + "p_" + to_string(num_omp_threads) + "t.csv";
+    Stats stats(myrank, MPI_COMM_WORLD, num_workers, num_omp_threads, stats_path);
 
     overallBegin = MPI_Wtime();
 
@@ -100,12 +99,11 @@ int main(int argc, char **argv)
 
     MPI_Barrier(MPI_COMM_WORLD); /* wait for master to complete reading */
 
-    // Initialization for scattering, evenly dividing dataset
-
+    // [1a] Scattering
     scatterBegin = MPI_Wtime();
 
     Scatterer scatterer(myrank, MPI_COMM_WORLD, num_workers);
-    // Broadcasting the dictionaries to all processes
+
     scatterer.broadcastDictionary(cfDictionary, MAX_CF_LENGTH);
     scatterer.broadcastDictionary(brghDictionary, MAX_BOROUGH_LENGTH);
 
@@ -123,11 +121,9 @@ int main(int argc, char **argv)
     Process processer(myrank, MPI_COMM_WORLD, &cfDictionary, &brghDictionary);
 
     omp_set_num_threads(num_omp_threads);
-
 #pragma omp declare reduction(accPairSum:AccPair \
                               : omp_out += omp_in)
 
-// Every worker will compute in the final datastructure the num of lethal accidents for its sub-dataset and then Reduce it to allow the master to collect final results
 #pragma omp parallel for default(shared) schedule(dynamic, dynChunk) reduction(+                                            \
                                                                                : local_lethAccPerWeek) reduction(accPairSum \
                                                                                                                  : local_accAndPerc, local_boroughWeekAcc)
@@ -149,13 +145,13 @@ int main(int argc, char **argv)
     stats.setProcTimes(&procDuration);
 
     // [3] Output results
-
     if (myrank == 0)
     {
         writeBegin = MPI_Wtime();
         // Open output file
-        const string outputDataPath = "../results/result_monoread_" + dataset_dim + ".txt";
-        Printer printer(myrank, MPI_COMM_WORLD, outputDataPath, &cfDictionary, &brghDictionary);
+        const string result_dir_path = "../results/";
+        const string result_path = result_dir_path + "result_monoread_" + dataset_dim + ".txt";
+        Printer printer(myrank, MPI_COMM_WORLD, result_path, &cfDictionary, &brghDictionary);
 
         printer.openFile();
 
@@ -176,9 +172,11 @@ int main(int argc, char **argv)
     if (myrank == 0)
     {
         stats.openFile();
+
         stats.computeAverages();
         stats.printStats();
         stats.writeStats();
+
         stats.closeFile();
     }
 

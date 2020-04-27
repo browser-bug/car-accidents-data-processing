@@ -26,8 +26,13 @@ int main(int argc, char **argv)
     // int err;              // used for MPI error messages
 
     // Load dataset variables
-    const string dataset_path = "../dataset/";
-    const string csv_path = dataset_path + "collisions_" + dataset_dim + ".csv";
+    const string dataset_dir_path = "../dataset/";
+    const string csv_path = dataset_dir_path + "collisions_" + dataset_dim + ".csv";
+
+    // Results data
+    int global_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                  // Global data structure for QUERY1
+    AccPair global_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                       // Global data structure for QUERY2
+    AccPair global_boroughWeekAcc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Global data structure for QUERY3
 
     // Support dictonaries
     map<string, int> cfDictionary;
@@ -43,13 +48,10 @@ int main(int argc, char **argv)
     double procBegin, procDuration = 0;       // processing phase duration time
     double writeBegin, writeDuration = 0;     // printing stats duration time
 
-    int local_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                  // Local data structure for QUERY1
-    AccPair local_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                       // Local data structure for QUERY2
-    AccPair local_boroughWeekAcc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Local data structure for QUERY3
-
     // Stats variables
-    string statsFilePath = "../stats/stats_serial_" + dataset_dim + "_1p_1t.csv";
-    Stats stats(0, NULL, 1, 1, statsFilePath);
+    const string stats_dir_path = "../stats/";
+    const string stats_path = stats_dir_path + "stats_serial_" + dataset_dim + "_1p_1t.csv";
+    Stats stats(0, NULL, 1, 1, stats_path);
 
     overallBegin = cpuSecond();
 
@@ -72,12 +74,11 @@ int main(int argc, char **argv)
     cout << "Started processing dataset..." << endl;
     Process processer(0, NULL, &cfDictionary, &brghDictionary);
 
-    // Every worker will compute in the final datastructure the num of lethal accidents for its sub-dataset and then Reduce it to allow the master to collect final results
     for (int i = 0; i < my_num_rows; i++)
     {
-        processer.processQuery1(localRows[i], local_lethAccPerWeek);
-        processer.processQuery2(localRows[i], local_accAndPerc);
-        processer.processQuery3(localRows[i], local_boroughWeekAcc);
+        processer.processQuery1(localRows[i], global_lethAccPerWeek);
+        processer.processQuery2(localRows[i], global_accAndPerc);
+        processer.processQuery3(localRows[i], global_boroughWeekAcc);
     }
 
     procDuration = cpuSecond() - procBegin;
@@ -87,14 +88,16 @@ int main(int argc, char **argv)
     writeBegin = cpuSecond();
 
     // Open output file
-    const string outputDataPath = "../results/result_serial_" + dataset_dim + ".txt";
-    Printer printer(0, NULL, outputDataPath, &cfDictionary, &brghDictionary);
+    const string result_dir_path = "../results/";
+    const string result_path = result_dir_path + "result_serial_" + dataset_dim + ".txt";
+    Printer printer(0, NULL, result_path, &cfDictionary, &brghDictionary);
 
     printer.openFile();
 
-    printer.writeQuery1(local_lethAccPerWeek);
-    printer.writeQuery2(local_accAndPerc);
-    printer.writeQuery3(local_boroughWeekAcc);
+    printer.writeQuery1(global_lethAccPerWeek);
+    printer.writeQuery2(global_accAndPerc);
+    printer.writeQuery3(global_boroughWeekAcc);
+
     printer.closeFile();
 
     writeDuration = cpuSecond() - writeBegin;
