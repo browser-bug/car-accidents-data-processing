@@ -44,6 +44,8 @@ stats/chart_*
 # Extras
 .vscode
 output_serial.txt
+notes_openmp.txt
+notes_mpi.txt
 MPI/examples/kmeans_mpi/kmeans
 MPI/examples/kmeans_mpi/kmeans_serial
 
