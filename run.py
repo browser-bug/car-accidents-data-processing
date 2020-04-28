@@ -23,7 +23,7 @@ def main(argv):
         usage()
         sys.exit(0)
 
-    # Sanity check of arguments
+    # Default parameters
     binaryFile = ''
     hostFile = ''
     maxNumProcess = 4
