@@ -116,26 +116,27 @@ void Loader::pushRow(vector<Row> &data, CSVRow row)
     if (!row[TIME].compare("TIME")) // TODO: find a nicer way to skip the header
         return;
 
+    int num_pers_killed = row.getNumPersonsKilled();
+    int num_contributing_factors = 0;
+    Row newRow(num_pers_killed, num_contributing_factors);
+
     string date = row[DATE];
-    string borough = row[BOROUGH];
-    vector<string> cfs = row.getContributingFactors();
-
-    Row newRow(row.getNumPersonsKilled(), 0);
-
     newRow.setDate(date);
 
-    for (auto cf : cfs)
-    {
-        newRow.setContributingFactor(cf);
-        // Populating dictionary for QUERY2
-        cfDictionary.insert({cf, cfDictionary.size()});
-    }
-
+    string borough = row[BOROUGH];
     if (!borough.empty())
     {
         newRow.setBorough(borough);
         // Populating dictionary for QUERY3
         brghDictionary.insert({borough, brghDictionary.size()});
+    }
+
+    vector<string> cfs = row.getContributingFactors();
+    for (auto cf : cfs)
+    {
+        newRow.setContributingFactor(cf);
+        // Populating dictionary for QUERY2
+        cfDictionary.insert({cf, cfDictionary.size()});
     }
 
     data.push_back(newRow);
