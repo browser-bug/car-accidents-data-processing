@@ -24,19 +24,24 @@ public:
     void readNextRow(std::istream &str);
     void readRowFromString(std::string line);
 
-    std::string const &operator[](std::size_t index) const
+    inline std::string const &operator[](std::size_t index) const
     {
         return m_data[index];
     }
 
-    std::size_t size() const
+    inline std::size_t size() const
     {
         return m_data.size();
     }
 
-    std::vector<std::string> getData()
+    inline std::vector<std::string> getData()
     {
         return m_data;
+    }
+
+    inline bool isHeader()
+    {
+        return !(m_data[DATE].compare("DATE"));
     }
 
 private:
