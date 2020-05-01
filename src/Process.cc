@@ -4,35 +4,32 @@
 
 using namespace std;
 
-void Process::processQuery1(const Row &data, int result[][NUM_WEEKS_PER_YEAR])
+void Process::processQuery1(Row &data, int result[][NUM_WEEKS_PER_YEAR])
 {
-    int lethal = (data.num_pers_killed > 0) ? 1 : 0;
-
-    if (lethal)
+    if (data.isLethal())
     {
         auto date = computeWeekAndYear(data.date);
         result[date.year][date.week]++;
     }
 }
 
-void Process::processQuery2(const Row &data, AccPair result[NUM_BOROUGH])
+void Process::processQuery2(Row &data, AccPair result[NUM_BOROUGH])
 {
     int cfIndex = 0;
-    int lethal = (data.num_pers_killed > 0) ? 1 : 0;
 
     for (int k = 0; k < data.num_contributing_factors; k++)
     {
         cfIndex = dictQuery2.at(string(data.contributing_factors[k]));
         (result[cfIndex].numAccidents)++;
-        (result[cfIndex].numLethalAccidents) += lethal;
+        if (data.isLethal())
+            (result[cfIndex].numLethalAccidents)++;
     }
 }
 
-void Process::processQuery3(const Row &data, AccPair result[][NUM_YEARS][NUM_WEEKS_PER_YEAR])
+void Process::processQuery3(Row &data, AccPair result[][NUM_YEARS][NUM_WEEKS_PER_YEAR])
 {
     int brghIndex = 0;
-    int lethal = (data.num_pers_killed > 0) ? 1 : 0;
-    string borough = string(data.borough);
+    string borough(data.borough);
 
     if (!borough.empty()) // if borough is not specified we're not interested
     {
@@ -40,7 +37,8 @@ void Process::processQuery3(const Row &data, AccPair result[][NUM_YEARS][NUM_WEE
 
         brghIndex = dictQuery3.at(borough);
         result[brghIndex][date.year][date.week].numAccidents++;
-        result[brghIndex][date.year][date.week].numLethalAccidents += lethal;
+        if (data.isLethal())
+            result[brghIndex][date.year][date.week].numLethalAccidents++;
     }
 }
 

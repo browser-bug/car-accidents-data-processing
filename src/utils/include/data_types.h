@@ -33,6 +33,11 @@ typedef struct Row
     char borough[MAX_BOROUGH_LENGTH] = {};
 
     /* Methods */
+    bool isLethal()
+    {
+        return num_pers_killed > 0;
+    }
+
     void setDate(std::string newDate)
     {
         std::size_t length = newDate.copy(date, newDate.size());
