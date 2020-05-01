@@ -5,6 +5,7 @@
 
 #include <cstring>
 
+#define BASE_YEAR 2012 // this defines the oldest year in the dataset
 #define NUM_YEARS 6
 #define NUM_WEEKS_PER_YEAR 53
 #define NUM_CONTRIBUTING_FACTORS 47
@@ -87,18 +88,19 @@ inline void pairSum(void *inputBuffer, void *outputBuffer, int *len, MPI_Datatyp
     }
 }
 
-const int rowLength[] = {
+const int rowNumVariables = 5; // this is the number of member variables inside Row
+const int rowLength[rowNumVariables] = {
     MAX_DATE_LENGTH,
     1,
     MAX_CF_PER_ROW *MAX_CF_LENGTH,
     1,
     MAX_BOROUGH_LENGTH};
-const MPI_Aint rowDisplacements[] = {
+const MPI_Aint rowDisplacements[rowNumVariables] = {
     offsetof(Row, date),
     offsetof(Row, num_pers_killed),
     offsetof(Row, contributing_factors),
     offsetof(Row, num_contributing_factors),
     offsetof(Row, borough)};
-const MPI_Datatype rowTypes[] = {MPI_CHAR, MPI_INT, MPI_CHAR, MPI_INT, MPI_CHAR};
+const MPI_Datatype rowTypes[rowNumVariables] = {MPI_CHAR, MPI_INT, MPI_CHAR, MPI_INT, MPI_CHAR};
 
 #endif
