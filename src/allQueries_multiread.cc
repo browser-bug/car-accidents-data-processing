@@ -65,23 +65,23 @@ int main(int argc, char **argv)
     AccPair local_boroughWeekAcc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Local data structure for QUERY3
 
     // Timing stats variables
-    double overallBegin, overallDuration = 0; // overall application duration time
-    double loadBegin, loadDuration = 0;       // loading phase duration time
-    double scatterBegin, scatterDuration = 0; // scattering phase duration time
-    double procBegin, procDuration = 0;       // processing phase duration time
-    double writeBegin, writeDuration = 0;     // printing stats duration time
+    double overallBegin = 0, overallDuration = 0; // overall application duration time
+    double loadBegin = 0, loadDuration = 0;       // loading phase duration time
+    double scatterBegin = 0, scatterDuration = 0; // scattering phase duration time
+    double procBegin = 0, procDuration = 0;       // processing phase duration time
+    double writeBegin = 0, writeDuration = 0;     // printing stats duration time
 
     // Stats variables
     const string stats_dir_path = "../stats/";
     const string stats_path = stats_dir_path + "stats_multiread_" + dataset_dim + "_" + to_string(num_workers) + "p_" + to_string(num_omp_threads) + "t.csv";
-    Stats stats(myrank, MPI_COMM_WORLD, num_workers, num_omp_threads, stats_path);
+    Stats stats(stats_path, myrank, MPI_COMM_WORLD, num_workers, num_omp_threads);
 
     overallBegin = MPI_Wtime();
 
     // [1] Loading data from file
     loadBegin = MPI_Wtime();
 
-    Loader loader(myrank, MPI_COMM_WORLD, csv_path);
+    Loader loader(csv_path, myrank, MPI_COMM_WORLD);
     loader.multiReadDataset(localRows, num_workers);
     my_num_rows = localRows.size();
 
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
     // [1a] Scattering
     scatterBegin = MPI_Wtime();
 
-    Scatterer scatterer(myrank, MPI_COMM_WORLD, num_workers);
+    Scatterer scatterer(num_workers, myrank, MPI_COMM_WORLD);
 
     // Merge dictionaries from all processes
     scatterer.mergeDictionary(cfDictionary, MAX_CF_LENGTH);
@@ -110,7 +110,7 @@ int main(int argc, char **argv)
 
     cout << "[Proc. " + to_string(myrank) + "] Started processing dataset..." << endl;
     int dynChunk = (int)round(my_num_rows * 0.02); // this tunes the chunk size exploited by dynamic scheduling based on percentage
-    Process processer(myrank, MPI_COMM_WORLD, &cfDictionary, &brghDictionary);
+    Process processer(&cfDictionary, &brghDictionary, myrank, MPI_COMM_WORLD);
 
     omp_set_num_threads(num_omp_threads);
 #pragma omp declare reduction(accPairSum:AccPair \
@@ -143,7 +143,7 @@ int main(int argc, char **argv)
         // Open output file
         const string result_dir_path = "../results/";
         const string result_path = result_dir_path + "result_multiread_" + dataset_dim + ".txt";
-        Printer printer(myrank, MPI_COMM_WORLD, result_path, &cfDictionary, &brghDictionary);
+        Printer printer(result_path, &cfDictionary, &brghDictionary, myrank, MPI_COMM_WORLD);
 
         printer.openFile();
 

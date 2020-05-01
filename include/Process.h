@@ -12,14 +12,13 @@ using dictionary = std::map<std::string, int>;
 class Process : public Node
 {
 public:
-    Process(int myRank, MPI_Comm myCommunicator, const dictionary *dictQuery2 = nullptr, const dictionary *dictQuery3 = nullptr) : Node(myRank, myCommunicator)
+    Process(const dictionary *dictQuery2 = nullptr, const dictionary *dictQuery3 = nullptr, int myRank = 0, MPI_Comm myCommunicator = NULL) : Node(myRank, myCommunicator)
     {
         if (dictQuery2 != nullptr)
             this->dictQuery2 = *dictQuery2;
         if (dictQuery3 != nullptr)
             this->dictQuery3 = *dictQuery3;
     }
-    ~Process() {}
 
     void processQuery1(const Row &data, int result[][NUM_WEEKS_PER_YEAR]);
     void processQuery2(const Row &data, AccPair result[NUM_BOROUGH]);

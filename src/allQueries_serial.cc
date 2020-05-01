@@ -23,8 +23,6 @@ int main(int argc, char **argv)
     }
     string dataset_dim = argv[1];
 
-    // int err;              // used for MPI error messages
-
     // Load dataset variables
     const string dataset_dir_path = "../dataset/";
     const string csv_path = dataset_dir_path + "collisions_" + dataset_dim + ".csv";
@@ -51,14 +49,14 @@ int main(int argc, char **argv)
     // Stats variables
     const string stats_dir_path = "../stats/";
     const string stats_path = stats_dir_path + "stats_serial_" + dataset_dim + "_1p_1t.csv";
-    Stats stats(0, NULL, 1, 1, stats_path);
+    Stats stats(stats_path);
 
     overallBegin = cpuSecond();
 
     // [1] Loading data from file
     loadBegin = cpuSecond();
 
-    Loader loader(0, NULL, csv_path);
+    Loader loader(csv_path);
     loader.monoReadDataset(localRows);
     my_num_rows = localRows.size();
 
@@ -72,7 +70,7 @@ int main(int argc, char **argv)
     procBegin = cpuSecond();
 
     cout << "Started processing dataset..." << endl;
-    Process processer(0, NULL, &cfDictionary, &brghDictionary);
+    Process processer(&cfDictionary, &brghDictionary);
 
     for (int i = 0; i < my_num_rows; i++)
     {
@@ -90,7 +88,7 @@ int main(int argc, char **argv)
     // Open output file
     const string result_dir_path = "../results/";
     const string result_path = result_dir_path + "result_serial_" + dataset_dim + ".txt";
-    Printer printer(0, NULL, result_path, &cfDictionary, &brghDictionary);
+    Printer printer(result_path, &cfDictionary, &brghDictionary);
 
     printer.openFile();
 

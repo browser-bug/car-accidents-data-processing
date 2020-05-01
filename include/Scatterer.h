@@ -12,9 +12,8 @@ using dictionary = std::map<std::string, int>;
 class Scatterer : public Node
 {
 public:
-    Scatterer(int myRank, MPI_Comm myCommunicator, int num_workers) : Node(myRank, myCommunicator),
-                                                                      num_workers(num_workers) {}
-    ~Scatterer() {}
+    Scatterer(int num_workers, int myRank = 0, MPI_Comm myCommunicator = NULL) : Node(myRank, myCommunicator),
+                                                                                 num_workers(num_workers) {}
 
     void scatterData(std::vector<Row> *src, std::vector<Row> *dest, MPI_Datatype type, int csv_size);
     void broadcastDictionary(dictionary &dict, int maxKeyLength);

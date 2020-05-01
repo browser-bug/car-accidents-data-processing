@@ -10,7 +10,6 @@ class Node
 {
 public:
     Node(int myRank, MPI_Comm myCommunicator) : rank(myRank), comm(myCommunicator) {}
-    ~Node() {}
 
 protected:
     int rank;

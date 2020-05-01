@@ -12,7 +12,7 @@
 class Stats : public Node
 {
 public:
-    Stats(int myRank, MPI_Comm myCommunicator, int num_workers, int num_omp_threads, const std::string &statsFilePath) : Node(myRank, myCommunicator)
+    Stats(const std::string &statsFilePath, int myRank = 0, MPI_Comm myCommunicator = NULL, int num_workers = 1, int num_omp_threads = 1) : Node(myRank, myCommunicator)
     {
         this->statsFilePath = statsFilePath;
         this->num_workers = num_workers;
@@ -37,7 +37,6 @@ public:
             outFile.close();
         }
     }
-    ~Stats() {}
 
     void printStats();
     void writeStats();

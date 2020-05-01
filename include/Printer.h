@@ -12,9 +12,9 @@ using dictionary = std::map<std::string, int>;
 class Printer : public Node
 {
 public:
-    Printer(int myRank, MPI_Comm myCommunicator,
-            const std::string &outPath,
-            const dictionary *dictQuery2 = nullptr, const dictionary *dictQuery3 = nullptr) : Node(myRank, myCommunicator)
+    Printer(const std::string &outPath,
+            const dictionary *dictQuery2 = nullptr, const dictionary *dictQuery3 = nullptr,
+            int myRank = 0, MPI_Comm myCommunicator = NULL) : Node(myRank, myCommunicator)
     {
         outputFilePath = outPath;
 
@@ -23,7 +23,6 @@ public:
         if (dictQuery3 != nullptr)
             this->dictQuery3 = *dictQuery3;
     }
-    ~Printer() {}
 
     void writeQuery1(int data[][NUM_WEEKS_PER_YEAR]);
     void writeQuery2(AccPair data[NUM_BOROUGH]);

@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     // Stats variables
     const string stats_dir_path = "../stats/";
     const string stats_path = stats_dir_path + "stats_monoread_" + dataset_dim + "_" + to_string(num_workers) + "p_" + to_string(num_omp_threads) + "t.csv";
-    Stats stats(myrank, MPI_COMM_WORLD, num_workers, num_omp_threads, stats_path);
+    Stats stats(stats_path, myrank, MPI_COMM_WORLD, num_workers, num_omp_threads);
 
     overallBegin = MPI_Wtime();
 
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
     if (myrank == 0)
     {
         loadBegin = MPI_Wtime();
-        Loader loader(myrank, MPI_COMM_WORLD, csv_path);
+        Loader loader(csv_path, myrank, MPI_COMM_WORLD);
         loader.monoReadDataset(dataScatter);
         csv_size = dataScatter.size();
 
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
     // [1a] Scattering
     scatterBegin = MPI_Wtime();
 
-    Scatterer scatterer(myrank, MPI_COMM_WORLD, num_workers);
+    Scatterer scatterer(num_workers, myrank, MPI_COMM_WORLD);
 
     scatterer.broadcastDictionary(cfDictionary, MAX_CF_LENGTH);
     scatterer.broadcastDictionary(brghDictionary, MAX_BOROUGH_LENGTH);
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
 
     cout << "[Proc. " + to_string(myrank) + "] Started processing dataset..." << endl;
     int dynChunk = (int)round(my_num_rows * 0.02); // this tunes the chunk size exploited by dynamic scheduling based on percentage
-    Process processer(myrank, MPI_COMM_WORLD, &cfDictionary, &brghDictionary);
+    Process processer(&cfDictionary, &brghDictionary, myrank, MPI_COMM_WORLD);
 
     omp_set_num_threads(num_omp_threads);
 #pragma omp declare reduction(accPairSum:AccPair \
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
         // Open output file
         const string result_dir_path = "../results/";
         const string result_path = result_dir_path + "result_monoread_" + dataset_dim + ".txt";
-        Printer printer(myrank, MPI_COMM_WORLD, result_path, &cfDictionary, &brghDictionary);
+        Printer printer(result_path, &cfDictionary, &brghDictionary, myrank, MPI_COMM_WORLD);
 
         printer.openFile();
 
