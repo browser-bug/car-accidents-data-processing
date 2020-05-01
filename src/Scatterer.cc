@@ -66,7 +66,7 @@ void Scatterer::broadcastDictionary(dictionary &dict, int maxKeyLength)
             dict.insert({dictKeys[i], dictValues[i]});
     }
 
-    delete[] dictKeys;
+    free(dictKeys);
     delete[] dictValues;
 }
 
@@ -115,6 +115,6 @@ void Scatterer::mergeDictionary(dictionary &dict, int maxKeyLength)
 
     delete[] recvcounts;
     delete[] displs;
-    delete[] dictKeys;
-    delete[] finalDictKeys;
+    free(dictKeys);
+    free(finalDictKeys);
 }
