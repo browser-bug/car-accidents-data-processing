@@ -44,6 +44,8 @@ stats/chart_*
 # Extras
 .vscode
 output_serial.txt
+middleware_projects_19_20.pdf
+notes_*
 MPI
 OpenMP
 
