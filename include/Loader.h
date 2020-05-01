@@ -12,7 +12,7 @@ using dictionary = std::map<std::string, int>;
 class Loader : public Node
 {
 public:
-    Loader(const std::string &csvFilePath, int myRank = 0, MPI_Comm myCommunicator = NULL) : Node(myRank, myCommunicator), csv_path(csvFilePath) {}
+    Loader(const std::string &csvFilePath, int myRank = 0, MPI_Comm myCommunicator = 0) : Node(myRank, myCommunicator), csv_path(csvFilePath) {}
 
     void monoReadDataset(std::vector<Row> &data);
     /* 

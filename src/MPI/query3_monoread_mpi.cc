@@ -32,7 +32,7 @@ typedef struct Row
     Row(int npk)
         : num_pers_killed(npk){};
 
-    char date[DATE_LENGTH] = {};
+    char date[MAX_DATE_LENGTH] = {};
 
     int num_pers_killed;
 
@@ -98,7 +98,7 @@ int main(int argc, char **argv)
     // MPI Datatypes definitions
     MPI_Datatype rowType;
     int rowLength[] = {
-        DATE_LENGTH,
+        MAX_DATE_LENGTH,
         1,
         MAX_BOROUGH_LENGTH};
     MPI_Aint rowDisplacements[] = {
@@ -168,7 +168,7 @@ int main(int argc, char **argv)
             string date = row[DATE];
             string borough = row[BOROUGH];
             Row newRow(row.getNumPersonsKilled());
-            strncpy(newRow.date, date.c_str(), DATE_LENGTH);
+            strncpy(newRow.date, date.c_str(), MAX_DATE_LENGTH);
 
             if (!borough.empty())
             {

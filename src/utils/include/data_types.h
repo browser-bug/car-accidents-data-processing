@@ -3,12 +3,14 @@
 
 #include <mpi.h>
 
+#include <cstring>
+
 #define NUM_YEARS 6
 #define NUM_WEEKS_PER_YEAR 53
 #define NUM_CONTRIBUTING_FACTORS 47
 #define NUM_BOROUGH 5
 
-#define DATE_LENGTH 11
+#define MAX_DATE_LENGTH 11
 #define MAX_CF_PER_ROW 5
 #define MAX_CF_LENGTH 55
 #define MAX_BOROUGH_LENGTH 15
@@ -21,7 +23,7 @@ typedef struct Row
         int ncf)
         : num_pers_killed(npk), num_contributing_factors(ncf){};
 
-    char date[DATE_LENGTH] = {};
+    char date[MAX_DATE_LENGTH] = {};
 
     int num_pers_killed;
 
@@ -29,6 +31,21 @@ typedef struct Row
     int num_contributing_factors;
 
     char borough[MAX_BOROUGH_LENGTH] = {};
+
+    /* Methods */
+    void setDate(std::string newDate)
+    {
+        strncpy(date, newDate.c_str(), MAX_DATE_LENGTH);
+    }
+    void setContributingFactor(std::string newContributingFactor)
+    {
+        strncpy(contributing_factors[num_contributing_factors], newContributingFactor.c_str(), MAX_CF_LENGTH);
+        num_contributing_factors++;
+    }
+    void setBorough(std::string newBorough)
+    {
+        strncpy(borough, newBorough.c_str(), MAX_BOROUGH_LENGTH);
+    }
 } Row;
 
 typedef struct AccPair
@@ -63,7 +80,7 @@ inline void pairSum(void *inputBuffer, void *outputBuffer, int *len, MPI_Datatyp
 }
 
 const int rowLength[] = {
-    DATE_LENGTH,
+    MAX_DATE_LENGTH,
     1,
     MAX_CF_PER_ROW *MAX_CF_LENGTH,
     1,

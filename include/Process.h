@@ -12,7 +12,7 @@ using dictionary = std::map<std::string, int>;
 class Process : public Node
 {
 public:
-    Process(const dictionary *dictQuery2 = nullptr, const dictionary *dictQuery3 = nullptr, int myRank = 0, MPI_Comm myCommunicator = NULL) : Node(myRank, myCommunicator)
+    Process(const dictionary *dictQuery2 = nullptr, const dictionary *dictQuery3 = nullptr, int myRank = 0, MPI_Comm myCommunicator = 0) : Node(myRank, myCommunicator)
     {
         if (dictQuery2 != nullptr)
             this->dictQuery2 = *dictQuery2;

@@ -122,21 +122,18 @@ void Loader::pushRow(vector<Row> &data, CSVRow row)
 
     Row newRow(row.getNumPersonsKilled(), 0);
 
-    strncpy(newRow.date, date.c_str(), DATE_LENGTH);
+    newRow.setDate(date);
 
-    for (unsigned int k = 0; k < cfs.size(); k++)
+    for (auto cf : cfs)
     {
-        strncpy(newRow.contributing_factors[k], cfs[k].c_str(), MAX_CF_LENGTH);
-        newRow.num_contributing_factors++;
-
+        newRow.setContributingFactor(cf);
         // Populating dictionary for QUERY2
-        cfDictionary.insert({cfs[k], cfDictionary.size()});
+        cfDictionary.insert({cf, cfDictionary.size()});
     }
 
     if (!borough.empty())
     {
-        strncpy(newRow.borough, borough.c_str(), MAX_BOROUGH_LENGTH);
-
+        newRow.setBorough(borough);
         // Populating dictionary for QUERY3
         brghDictionary.insert({borough, brghDictionary.size()});
     }

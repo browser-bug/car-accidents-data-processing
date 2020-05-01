@@ -14,7 +14,7 @@ class Printer : public Node
 public:
     Printer(const std::string &outPath,
             const dictionary *dictQuery2 = nullptr, const dictionary *dictQuery3 = nullptr,
-            int myRank = 0, MPI_Comm myCommunicator = NULL) : Node(myRank, myCommunicator)
+            int myRank = 0, MPI_Comm myCommunicator = 0) : Node(myRank, myCommunicator)
     {
         outputFilePath = outPath;
 

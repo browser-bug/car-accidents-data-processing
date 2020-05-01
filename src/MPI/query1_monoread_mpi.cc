@@ -29,7 +29,7 @@ typedef struct Row
     Row(int npk)
         : num_pers_killed(npk){};
 
-    char date[DATE_LENGTH] = {};
+    char date[MAX_DATE_LENGTH] = {};
 
     int num_pers_killed;
 } Row;
@@ -64,7 +64,7 @@ int main(int argc, char **argv)
 
     // MPI Datatype creation
     MPI_Datatype rowType;
-    int rowLength[] = {DATE_LENGTH, 1};
+    int rowLength[] = {MAX_DATE_LENGTH, 1};
     MPI_Aint rowDisplacements[] = {
         offsetof(Row, date),
         offsetof(Row, num_pers_killed)};
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 
             string date = row[DATE];
             Row newRow(row.getNumPersonsKilled());
-            strncpy(newRow.date, date.c_str(), DATE_LENGTH);
+            strncpy(newRow.date, date.c_str(), MAX_DATE_LENGTH);
             dataScatter.push_back(newRow);
         }
 
