@@ -33,6 +33,8 @@ public:
     }
 
 private:
+    void pushRow(std::vector<Row> &data, CSVRow row);
+
     std::string csv_path;
 
     dictionary cfDictionary;

@@ -14,36 +14,8 @@ void Loader::monoReadDataset(vector<Row> &data)
     CSVRow row;
     for (CSVIterator loop(file); loop != CSVIterator(); ++loop)
     {
-        if (!(*loop)[TIME].compare("TIME")) // TODO: find a nicer way to skip the header
-            continue;
-
         row = (*loop);
-        string date = row[DATE];
-        string borough = row[BOROUGH];
-        vector<string> cfs = row.getContributingFactors();
-
-        Row newRow(row.getNumPersonsKilled(), 0);
-
-        strncpy(newRow.date, date.c_str(), DATE_LENGTH);
-
-        for (unsigned int k = 0; k < cfs.size(); k++)
-        {
-            strncpy(newRow.contributing_factors[k], cfs[k].c_str(), MAX_CF_LENGTH);
-            newRow.num_contributing_factors++;
-
-            // Populating dictionary for QUERY2
-            cfDictionary.insert({cfs[k], cfDictionary.size()});
-        }
-
-        if (!borough.empty())
-        {
-            strncpy(newRow.borough, borough.c_str(), MAX_BOROUGH_LENGTH);
-
-            // Populating dictionary for QUERY3
-            brghDictionary.insert({borough, brghDictionary.size()});
-        }
-
-        data.push_back(newRow);
+        pushRow(data, row);
     }
 }
 
@@ -130,39 +102,44 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
             {
                 row.readRowFromString(line);
                 line.clear();
-                if (!row[TIME].compare("TIME")) // TODO: find a nicer way to skip the header
-                    continue;
-
-                string date = row[DATE];
-                string borough = row[BOROUGH];
-                vector<string> cfs = row.getContributingFactors();
-
-                Row newRow(row.getNumPersonsKilled(), 0);
-
-                strncpy(newRow.date, date.c_str(), DATE_LENGTH);
-
-                for (unsigned int k = 0; k < cfs.size(); k++)
-                {
-                    strncpy(newRow.contributing_factors[k], cfs[k].c_str(), MAX_CF_LENGTH);
-                    newRow.num_contributing_factors++;
-
-                    // Populating dictionary for QUERY2
-                    cfDictionary.insert({cfs[k], cfDictionary.size()});
-                }
-
-                if (!borough.empty())
-                {
-                    strncpy(newRow.borough, borough.c_str(), MAX_BOROUGH_LENGTH);
-
-                    // Populating dictionary for QUERY3
-                    brghDictionary.insert({borough, brghDictionary.size()});
-                }
-
-                data.push_back(newRow);
+                pushRow(data, row);
             }
         }
 
         delete[] chunk;
         MPI_File_close(&input_file);
     }
+}
+
+void Loader::pushRow(vector<Row> &data, CSVRow row)
+{
+    if (!row[TIME].compare("TIME")) // TODO: find a nicer way to skip the header
+        return;
+
+    string date = row[DATE];
+    string borough = row[BOROUGH];
+    vector<string> cfs = row.getContributingFactors();
+
+    Row newRow(row.getNumPersonsKilled(), 0);
+
+    strncpy(newRow.date, date.c_str(), DATE_LENGTH);
+
+    for (unsigned int k = 0; k < cfs.size(); k++)
+    {
+        strncpy(newRow.contributing_factors[k], cfs[k].c_str(), MAX_CF_LENGTH);
+        newRow.num_contributing_factors++;
+
+        // Populating dictionary for QUERY2
+        cfDictionary.insert({cfs[k], cfDictionary.size()});
+    }
+
+    if (!borough.empty())
+    {
+        strncpy(newRow.borough, borough.c_str(), MAX_BOROUGH_LENGTH);
+
+        // Populating dictionary for QUERY3
+        brghDictionary.insert({borough, brghDictionary.size()});
+    }
+
+    data.push_back(newRow);
 }
