@@ -26,9 +26,9 @@ public:
             this->dictQuery3 = *dictQuery3;
     }
 
-    void processQuery1(Row &data, int result[][NUM_WEEKS_PER_YEAR]);
-    void processQuery2(Row &data, AccPair result[NUM_BOROUGH]);
-    void processQuery3(Row &data, AccPair result[][NUM_YEARS][NUM_WEEKS_PER_YEAR]);
+    void processLethAccPerWeek(Row &data, int result[][NUM_WEEKS_PER_YEAR]);
+    void processNumAccAndPerc(Row &data, AccPair result[NUM_BOROUGH]);
+    void processBoroughWeekAcc(Row &data, AccPair result[][NUM_YEARS][NUM_WEEKS_PER_YEAR]);
 
 private:
     week_and_year computeWeekAndYear(std::string date);

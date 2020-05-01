@@ -74,9 +74,9 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < my_num_rows; i++)
     {
-        processer.processQuery1(localRows[i], global_lethAccPerWeek);
-        processer.processQuery2(localRows[i], global_accAndPerc);
-        processer.processQuery3(localRows[i], global_boroughWeekAcc);
+        processer.processLethAccPerWeek(localRows[i], global_lethAccPerWeek);
+        processer.processNumAccAndPerc(localRows[i], global_accAndPerc);
+        processer.processBoroughWeekAcc(localRows[i], global_boroughWeekAcc);
     }
 
     procDuration = cpuSecond() - procBegin;

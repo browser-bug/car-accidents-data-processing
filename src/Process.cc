@@ -4,7 +4,7 @@
 
 using namespace std;
 
-void Process::processQuery1(Row &data, int result[][NUM_WEEKS_PER_YEAR])
+void Process::processLethAccPerWeek(Row &data, int result[][NUM_WEEKS_PER_YEAR])
 {
     if (data.isLethal())
     {
@@ -13,7 +13,7 @@ void Process::processQuery1(Row &data, int result[][NUM_WEEKS_PER_YEAR])
     }
 }
 
-void Process::processQuery2(Row &data, AccPair result[NUM_BOROUGH])
+void Process::processNumAccAndPerc(Row &data, AccPair result[NUM_BOROUGH])
 {
     int cfIndex = 0;
 
@@ -26,7 +26,7 @@ void Process::processQuery2(Row &data, AccPair result[NUM_BOROUGH])
     }
 }
 
-void Process::processQuery3(Row &data, AccPair result[][NUM_YEARS][NUM_WEEKS_PER_YEAR])
+void Process::processBoroughWeekAcc(Row &data, AccPair result[][NUM_YEARS][NUM_WEEKS_PER_YEAR])
 {
     int brghIndex = 0;
     string borough(data.borough);

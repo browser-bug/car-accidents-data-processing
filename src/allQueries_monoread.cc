@@ -129,9 +129,9 @@ int main(int argc, char **argv)
                                                                                                                  : local_accAndPerc, local_boroughWeekAcc)
     for (int i = 0; i < my_num_rows; i++)
     {
-        processer.processQuery1(localRows[i], local_lethAccPerWeek);
-        processer.processQuery2(localRows[i], local_accAndPerc);
-        processer.processQuery3(localRows[i], local_boroughWeekAcc);
+        processer.processLethAccPerWeek(localRows[i], local_lethAccPerWeek);
+        processer.processNumAccAndPerc(localRows[i], local_accAndPerc);
+        processer.processBoroughWeekAcc(localRows[i], local_boroughWeekAcc);
     }
 
     // Query1

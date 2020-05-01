@@ -29,9 +29,9 @@ int main(int argc, char **argv)
     const string dataset_dir_path = "../dataset/";
     const string csv_path = dataset_dir_path + "collisions_" + dataset_dim + ".csv";
     // Results data
-    int global_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                 // Global data structure for QUERY1
-    AccPair global_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                      // Global data structure for QUERY2
-    AccPair global_boroughWeekAc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Global data structure for QUERY3
+    int global_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                  // Global data structure for QUERY1
+    AccPair global_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                       // Global data structure for QUERY2
+    AccPair global_boroughWeekAcc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Global data structure for QUERY3
 
     // Support dictonaries
     map<string, int> cfDictionary;
@@ -121,9 +121,9 @@ int main(int argc, char **argv)
                                                                                                                  : local_accAndPerc, local_boroughWeekAcc)
     for (int i = 0; i < my_num_rows; i++)
     {
-        processer.processQuery1(localRows[i], local_lethAccPerWeek);
-        processer.processQuery2(localRows[i], local_accAndPerc);
-        processer.processQuery3(localRows[i], local_boroughWeekAcc);
+        processer.processLethAccPerWeek(localRows[i], local_lethAccPerWeek);
+        processer.processNumAccAndPerc(localRows[i], local_accAndPerc);
+        processer.processBoroughWeekAcc(localRows[i], local_boroughWeekAcc);
     }
 
     // Query1
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
     // Query2
     MPI_Reduce(local_accAndPerc, global_accAndPerc, NUM_CONTRIBUTING_FACTORS, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
     // Query3
-    MPI_Reduce(local_boroughWeekAcc, global_boroughWeekAc, NUM_BOROUGH * NUM_YEARS * NUM_WEEKS_PER_YEAR, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
+    MPI_Reduce(local_boroughWeekAcc, global_boroughWeekAcc, NUM_BOROUGH * NUM_YEARS * NUM_WEEKS_PER_YEAR, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
 
     procDuration = MPI_Wtime() - procBegin;
     stats.setProcTimes(&procDuration);
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
 
         printer.writeQuery1(global_lethAccPerWeek);
         printer.writeQuery2(global_accAndPerc);
-        printer.writeQuery3(global_boroughWeekAc);
+        printer.writeQuery3(global_boroughWeekAcc);
 
         printer.closeFile();
         writeDuration = MPI_Wtime() - writeBegin;
