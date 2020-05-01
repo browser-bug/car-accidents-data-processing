@@ -91,7 +91,7 @@ Todo:
         Ad esempio il numero di processi MPI, il numero di therads OpenMP, ecc. ecc.
         ☐ Convertire getopt to argparse (python2 vs python3 parsers) @started(20-04-11 17:48)
           Rafforziamo il parsing aggiungendo la possibilità di rendere delle opzioni obbligatori (es. --hostfile).
-        ☐ Cambiare i binary files da {file} a {./file} e verificare il funzionamento con tutti i test cases @started(20-04-22 17:35)
+        ✔ Cambiare i binary files da {file} a {./file} e verificare il funzionamento con tutti i test cases @started(20-04-22 17:35) @done(20-04-28 15:37) @lasted(5d22h2m40s)
 
       ✔ Cambia i nomi in MPI e OpenMP folders per renderli conformi alla guida usata (es. _mono_read, multi_read,ecc) @started(20-04-12 12:38) @done(20-04-14 17:01) @lasted(2d4h23m48s)
 
