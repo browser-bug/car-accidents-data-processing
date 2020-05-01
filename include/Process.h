@@ -9,6 +9,12 @@
 
 using dictionary = std::map<std::string, int>;
 
+struct week_and_year
+{
+    int week;
+    int year;
+};
+
 class Process : public Node
 {
 public:
@@ -25,7 +31,7 @@ public:
     void processQuery3(const Row &data, AccPair result[][NUM_YEARS][NUM_WEEKS_PER_YEAR]);
 
 private:
-    void computeWeekAndYear(std::string date, int &week, int &year);
+    week_and_year computeWeekAndYear(std::string date);
 
     dictionary dictQuery2;
     dictionary dictQuery3;
