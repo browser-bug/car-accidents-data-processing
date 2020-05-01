@@ -41,10 +41,10 @@ int main(int argc, char **argv)
     int my_num_rows;
 
     // Timing stats variables
-    double overallBegin, overallDuration = 0; // overall application duration time
-    double loadBegin, loadDuration = 0;       // loading phase duration time
-    double procBegin, procDuration = 0;       // processing phase duration time
-    double writeBegin, writeDuration = 0;     // printing stats duration time
+    double overallBegin = 0, overallDuration = 0; // overall application duration time
+    double loadBegin = 0, loadDuration = 0;       // loading phase duration time
+    double procBegin = 0, procDuration = 0;       // processing phase duration time
+    double writeBegin = 0, writeDuration = 0;     // printing stats duration time
 
     // Stats variables
     const string stats_dir_path = "../stats/";
@@ -106,8 +106,10 @@ int main(int argc, char **argv)
 
     // Print statistics
     stats.openFile();
+
     stats.computeAverages();
     stats.printStats();
     stats.writeStats();
+
     stats.closeFile();
 }

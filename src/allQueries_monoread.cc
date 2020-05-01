@@ -31,9 +31,9 @@ int main(int argc, char **argv)
     int csv_size = 0;
 
     // Results data
-    int global_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                 // Global data structure for QUERY1
-    AccPair global_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                      // Global data structure for QUERY2
-    AccPair global_boroughWeekAc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Global data structure for QUERY3
+    int global_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                  // Global data structure for QUERY1
+    AccPair global_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                       // Global data structure for QUERY2
+    AccPair global_boroughWeekAcc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Global data structure for QUERY3
 
     // Support dictonaries
     map<string, int> cfDictionary;
@@ -68,11 +68,11 @@ int main(int argc, char **argv)
     AccPair local_boroughWeekAcc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Local data structure for QUERY3
 
     // Timing stats variables
-    double overallBegin, overallDuration = 0; // overall application duration time
-    double loadBegin, loadDuration = 0;       // loading phase duration time
-    double scatterBegin, scatterDuration = 0; // scattering phase duration time
-    double procBegin, procDuration = 0;       // processing phase duration time
-    double writeBegin, writeDuration = 0;     // printing stats duration time
+    double overallBegin = 0, overallDuration = 0; // overall application duration time
+    double loadBegin = 0, loadDuration = 0;       // loading phase duration time
+    double scatterBegin = 0, scatterDuration = 0; // scattering phase duration time
+    double procBegin = 0, procDuration = 0;       // processing phase duration time
+    double writeBegin = 0, writeDuration = 0;     // printing stats duration time
 
     // Stats variables
     const string stats_dir_path = "../stats/";
@@ -113,6 +113,8 @@ int main(int argc, char **argv)
     scatterDuration = MPI_Wtime() - scatterBegin;
     stats.setScatterTimes(&scatterDuration);
 
+    MPI_Barrier(MPI_COMM_WORLD); /* wait for scattering phase */
+
     // [2] Data processing
     procBegin = MPI_Wtime();
 
@@ -139,10 +141,12 @@ int main(int argc, char **argv)
     // Query2
     MPI_Reduce(local_accAndPerc, global_accAndPerc, NUM_CONTRIBUTING_FACTORS, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
     // Query3
-    MPI_Reduce(local_boroughWeekAcc, global_boroughWeekAc, NUM_BOROUGH * NUM_YEARS * NUM_WEEKS_PER_YEAR, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
+    MPI_Reduce(local_boroughWeekAcc, global_boroughWeekAcc, NUM_BOROUGH * NUM_YEARS * NUM_WEEKS_PER_YEAR, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
 
     procDuration = MPI_Wtime() - procBegin;
     stats.setProcTimes(&procDuration);
+
+    MPI_Barrier(MPI_COMM_WORLD); /* wait for processing phase*/
 
     // [3] Output results
     if (myrank == 0)
@@ -157,7 +161,7 @@ int main(int argc, char **argv)
 
         printer.writeOutput(global_lethAccPerWeek);
         printer.writeOutput(global_accAndPerc);
-        printer.writeOutput(global_boroughWeekAc);
+        printer.writeOutput(global_boroughWeekAcc);
 
         printer.closeFile();
         writeDuration = MPI_Wtime() - writeBegin;

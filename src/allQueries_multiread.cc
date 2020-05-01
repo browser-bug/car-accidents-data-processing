@@ -105,6 +105,8 @@ int main(int argc, char **argv)
     scatterDuration = MPI_Wtime() - scatterBegin;
     stats.setScatterTimes(&scatterDuration);
 
+    MPI_Barrier(MPI_COMM_WORLD); /* wait for scattering phase */
+
     // [2] Data processing
     procBegin = MPI_Wtime();
 
@@ -135,6 +137,8 @@ int main(int argc, char **argv)
 
     procDuration = MPI_Wtime() - procBegin;
     stats.setProcTimes(&procDuration);
+
+    MPI_Barrier(MPI_COMM_WORLD); /* wait for processing phase*/
 
     // [3] Output results
     if (myrank == 0)
