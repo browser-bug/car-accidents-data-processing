@@ -112,7 +112,7 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
 
 void Loader::pushRow(vector<Row> &data, CSVRow row)
 {
-    if (!row[TIME].compare("TIME")) // TODO: find a nicer way to skip the header
+    if (row.isHeader()) // skip header
         return;
 
     int num_pers_killed = row.getNumPersonsKilled();

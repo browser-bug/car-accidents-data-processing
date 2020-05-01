@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 
-    MPI_Type_create_struct(5, rowLength, rowDisplacements, rowTypes, &rowType);
+    MPI_Type_create_struct(rowNumVariables, rowLength, rowDisplacements, rowTypes, &rowType);
     MPI_Type_commit(&rowType);
 
     MPI_Op_create(pairSum, true, &accPairSum);

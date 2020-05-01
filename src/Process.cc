@@ -56,7 +56,7 @@ week_and_year Process::computeWeekAndYear(string date)
         y--;
 
     result.week = w - 1;
-    result.year = y - 2012;
+    result.year = y - BASE_YEAR;
 
     return result;
 }

@@ -15,7 +15,7 @@ void Printer::writeOutput(int data[][NUM_WEEKS_PER_YEAR])
             int numLethAcc = data[year][week];
             if (numLethAcc > 0)
             {
-                outFile << "(" << (year + 2012) << ")Week: " << (week + 1) << "\t\t\t Num. lethal accidents: ";
+                outFile << "(" << (year + BASE_YEAR) << ")Week: " << (week + 1) << "\t\t\t Num. lethal accidents: ";
                 outFile << numLethAcc << '\n';
                 totalAccidents += numLethAcc;
                 totalWeeks++;
@@ -59,7 +59,7 @@ void Printer::writeOutput(AccPair data[][NUM_YEARS][NUM_WEEKS_PER_YEAR])
                 numAccidents += data[b.second][year][week].numAccidents;
                 numLethalAccidents += data[b.second][year][week].numLethalAccidents;
 
-                outFile << "(" << (year + 2012) << ")Week " << (week + 1);                               // print (Year)Week N
+                outFile << "(" << (year + BASE_YEAR) << ")Week " << (week + 1);                          // print (Year)Week N
                 outFile << "\t\t\t num. accidents: " << data[b.second][year][week].numAccidents << '\n'; // print numAccidents
             }
         }
