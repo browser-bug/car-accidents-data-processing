@@ -9,6 +9,19 @@
 
 #include "Node.h"
 
+struct TimeStats
+{
+    TimeStats() : average(0) {}
+
+    std::vector<double> times;
+    double average;
+
+    int getNumContributingProcesses()
+    {
+        return count_if(times.begin(), times.end(), [](double i) { return i > 0; });
+    }
+};
+
 class Stats : public Node
 {
 public:
@@ -17,15 +30,14 @@ public:
         this->statsFilePath = statsFilePath;
         this->num_workers = num_workers;
         this->num_omp_threads = num_omp_threads;
-        avgOverall = 0, avgLoading = 0, avgScattering = 0, avgProcessing = 0, avgWriting = 0;
 
         if (myRank == 0)
         {
-            overallTimes.resize(num_workers);
-            loadTimes.resize(num_workers);
-            scatterTimes.resize(num_workers);
-            procTimes.resize(num_workers);
-            writeTimes.resize(num_workers);
+            overall.times.resize(num_workers);
+            load.times.resize(num_workers);
+            scatter.times.resize(num_workers);
+            proc.times.resize(num_workers);
+            write.times.resize(num_workers);
         }
 
         std::ifstream checkFile(statsFilePath);
@@ -64,28 +76,17 @@ public:
     }
 
 private:
-    int getNumContributingProcesses(std::vector<double> &times);
-
     std::string statsFilePath;
     std::ofstream outFile;
 
     int num_workers;
     int num_omp_threads;
 
-    std::vector<double> overallTimes;
-    double avgOverall;
-
-    std::vector<double> loadTimes;
-    double avgLoading;
-
-    std::vector<double> scatterTimes;
-    double avgScattering;
-
-    std::vector<double> procTimes;
-    double avgProcessing;
-
-    std::vector<double> writeTimes;
-    double avgWriting;
+    TimeStats overall;
+    TimeStats load;
+    TimeStats scatter;
+    TimeStats proc;
+    TimeStats write;
 };
 
 #endif

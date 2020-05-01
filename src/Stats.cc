@@ -12,30 +12,30 @@ void Stats::printStats()
     for (int i = 0; i < num_workers; i++)
     {
         cout << "Process {" << i << "}\t";
-        cout << "Loading(" << loadTimes[i] << "), ";
+        cout << "Loading(" << load.times[i] << "), ";
         if (i != 0)
-            cout << "Scattering(" << scatterTimes[i] << "), ";
-        cout << "Processing(" << procTimes[i] << "), ";
-        cout << "Writing(" << writeTimes[i] << "), ";
-        cout << "took overall " << overallTimes[i] << " seconds" << endl;
+            cout << "Scattering(" << scatter.times[i] << "), ";
+        cout << "Processing(" << proc.times[i] << "), ";
+        cout << "Writing(" << write.times[i] << "), ";
+        cout << "took overall " << overall.times[i] << " seconds" << endl;
     }
 
     cout << endl
          << "With average times of: "
-         << "[1] Loading(" << avgLoading << "), "
-         << "[1a] Scattering(" << avgScattering << "), "
-         << "[2] Processing(" << avgProcessing << "), "
-         << "[3] Writing(" << avgWriting << "),\t"
-         << "Overall(" << avgOverall << ").\n";
+         << "[1] Loading(" << load.average << "), "
+         << "[1a] Scattering(" << scatter.average << "), "
+         << "[2] Processing(" << proc.average << "), "
+         << "[3] Writing(" << write.average << "),\t"
+         << "Overall(" << overall.average << ").\n";
 }
 
 void Stats::writeStats()
 {
-    outFile << avgLoading << ","
-            << avgScattering << ","
-            << avgProcessing << ","
-            << avgWriting << ","
-            << avgOverall
+    outFile << load.average << ","
+            << scatter.average << ","
+            << proc.average << ","
+            << write.average << ","
+            << overall.average
             << endl;
 }
 
@@ -43,58 +43,53 @@ void Stats::computeAverages()
 {
     for (int i = 0; i < num_workers; i++)
     {
-        avgOverall += overallTimes[i];
-        avgLoading += loadTimes[i];
+        overall.average += overall.times[i];
+        load.average += load.times[i];
         if (i != 0)
-            avgScattering += scatterTimes[i];
-        avgProcessing += procTimes[i];
-        avgWriting += writeTimes[i];
+            scatter.average += scatter.times[i];
+        proc.average += proc.times[i];
+        write.average += write.times[i];
     }
 
-    avgOverall /= getNumContributingProcesses(overallTimes);
-    avgLoading /= getNumContributingProcesses(loadTimes);
-    avgScattering /= getNumContributingProcesses(scatterTimes);
-    avgProcessing /= getNumContributingProcesses(procTimes);
-    avgWriting /= getNumContributingProcesses(writeTimes);
-}
-
-int Stats::getNumContributingProcesses(vector<double> &times)
-{
-    return count_if(times.begin(), times.end(), [](double i) { return i > 0; });
+    overall.average /= overall.getNumContributingProcesses();
+    load.average /= load.getNumContributingProcesses();
+    scatter.average /= scatter.getNumContributingProcesses();
+    proc.average /= proc.getNumContributingProcesses();
+    write.average /= write.getNumContributingProcesses();
 }
 
 void Stats::setOverallTimes(double *duration)
 {
     if (num_workers == 1)
-        overallTimes[0] = *duration;
+        overall.times[0] = *duration;
     else
-        MPI_Gather(duration, 1, MPI_DOUBLE, overallTimes.data(), 1, MPI_DOUBLE, 0, comm);
+        MPI_Gather(duration, 1, MPI_DOUBLE, overall.times.data(), 1, MPI_DOUBLE, 0, comm);
 }
 void Stats::setLoadTimes(double *duration)
 {
     if (num_workers == 1)
-        loadTimes[0] = *duration;
+        load.times[0] = *duration;
     else
-        MPI_Gather(duration, 1, MPI_DOUBLE, loadTimes.data(), 1, MPI_DOUBLE, 0, comm);
+        MPI_Gather(duration, 1, MPI_DOUBLE, load.times.data(), 1, MPI_DOUBLE, 0, comm);
 }
 void Stats::setScatterTimes(double *duration)
 {
     if (num_workers == 1)
-        scatterTimes[0] = *duration;
+        scatter.times[0] = *duration;
     else
-        MPI_Gather(duration, 1, MPI_DOUBLE, scatterTimes.data(), 1, MPI_DOUBLE, 0, comm);
+        MPI_Gather(duration, 1, MPI_DOUBLE, scatter.times.data(), 1, MPI_DOUBLE, 0, comm);
 }
 void Stats::setProcTimes(double *duration)
 {
     if (num_workers == 1)
-        procTimes[0] = *duration;
+        proc.times[0] = *duration;
     else
-        MPI_Gather(duration, 1, MPI_DOUBLE, procTimes.data(), 1, MPI_DOUBLE, 0, comm);
+        MPI_Gather(duration, 1, MPI_DOUBLE, proc.times.data(), 1, MPI_DOUBLE, 0, comm);
 }
 void Stats::setWriteTimes(double *duration)
 {
     if (num_workers == 1)
-        writeTimes[0] = *duration;
+        write.times[0] = *duration;
     else
-        MPI_Gather(duration, 1, MPI_DOUBLE, writeTimes.data(), 1, MPI_DOUBLE, 0, comm);
+        MPI_Gather(duration, 1, MPI_DOUBLE, write.times.data(), 1, MPI_DOUBLE, 0, comm);
 }
