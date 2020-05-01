@@ -5,10 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
 set(utils_SRC utility.cc)
 
 # build for convenience library
-add_library(utility SHARED ${utils_SRC})
+add_library(utility ${utils_SRC})
 
 # includes
 target_include_directories(utility PUBLIC ${PROJECT_SOURCE_DIR}/include)
-
-# installation in case other projects or modules need a fast linkage
-install(TARGETS utility DESTINATION ${OPT_DIR}/lib)

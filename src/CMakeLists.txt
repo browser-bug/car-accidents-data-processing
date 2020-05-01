@@ -14,21 +14,25 @@ set(SRC_FILES
   Stats.cc
 )
 
+add_library(data_processing ${SRC_FILES})
+target_include_directories(data_processing PUBLIC "../include")
+target_link_libraries(data_processing utility csvrow)
+
 # required packages
 find_package(MPI REQUIRED)
 find_package(OpenMP REQUIRED)
 
 # list of file paths
-set(UTILITY_PATH ${PROJECT_SOURCE_DIR}/src/utils)
+set(UTILITY_PATH "/utils")
 
 # include directories
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+include_directories("../include")
 include_directories(${UTILITY_PATH}/include)
 include_directories(${UTILITY_PATH}/csv_row/include)
-include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # linking project libraries
-link_libraries(utility csvrow)
+link_libraries(utility csvrow data_processing)
 
 # linking MPICH
 link_libraries(${MPI_CXX_LIBRARIES})
@@ -40,7 +44,7 @@ set_property(GLOBAL PROPERTY LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 endif()
 
 # create binary files
-add_executable (allQueries_multiread.o allQueries_multiread.cc ${SRC_FILES})
-add_executable (allQueries_monoread.o allQueries_monoread.cc ${SRC_FILES})
-add_executable (allQueries_serial.o allQueries_serial.cc ${SRC_FILES})
-# add_executable(test.o test.cc ${SRC_FILES})
+add_executable (allQueries_multiread.o allQueries_multiread.cc)
+add_executable (allQueries_monoread.o allQueries_monoread.cc)
+add_executable (allQueries_serial.o allQueries_serial.cc)
+# add_executable(test.o test.cc)
