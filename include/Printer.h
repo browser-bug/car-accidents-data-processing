@@ -24,9 +24,9 @@ public:
             this->dictQuery3 = *dictQuery3;
     }
 
-    void writeQuery1(int data[][NUM_WEEKS_PER_YEAR]);
-    void writeQuery2(AccPair data[NUM_BOROUGH]);
-    void writeQuery3(AccPair data[][NUM_YEARS][NUM_WEEKS_PER_YEAR]);
+    void writeOutput(int data[][NUM_WEEKS_PER_YEAR]);                // Query1
+    void writeOutput(AccPair data[NUM_BOROUGH]);                     // Query2
+    void writeOutput(AccPair data[][NUM_YEARS][NUM_WEEKS_PER_YEAR]); // Query3
 
     inline bool openFile()
     {

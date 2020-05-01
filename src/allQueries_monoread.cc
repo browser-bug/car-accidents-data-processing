@@ -155,9 +155,9 @@ int main(int argc, char **argv)
 
         printer.openFile();
 
-        printer.writeQuery1(global_lethAccPerWeek);
-        printer.writeQuery2(global_accAndPerc);
-        printer.writeQuery3(global_boroughWeekAc);
+        printer.writeOutput(global_lethAccPerWeek);
+        printer.writeOutput(global_accAndPerc);
+        printer.writeOutput(global_boroughWeekAc);
 
         printer.closeFile();
         writeDuration = MPI_Wtime() - writeBegin;
