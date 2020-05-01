@@ -16,7 +16,7 @@ public:
 
     void monoReadDataset(std::vector<Row> &data);
     /* 
-    The core structure of this code comes from the Stack Overflow Network.
+    The core structure of this code comes from the Stack Overflow Network (license https://creativecommons.org/licenses/by-sa/4.0/legalcode)
     Link to the original answer/question: https://stackoverflow.com/questions/12939279/mpi-reading-from-a-text-file
     Author: Jonathan Dursi https://stackoverflow.com/users/463827/jonathan-dursi
     */

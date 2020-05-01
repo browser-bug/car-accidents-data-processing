@@ -47,9 +47,11 @@ void Scatterer::broadcastDictionary(dictionary &dict, int maxKeyLength)
     if (rank == 0)
     {
         int i = 0;
+        size_t length;
         for (auto cf : dict)
         {
-            strncpy(dictKeys[i], cf.first.c_str(), maxKeyLength);
+            length = cf.first.copy(dictKeys[i], cf.first.size());
+            dictKeys[i][length] = '\0';
             dictValues[i] = cf.second;
             i++;
         }
@@ -97,9 +99,11 @@ void Scatterer::mergeDictionary(dictionary &dict, int maxKeyLength)
 
     // Collect keys for each process
     int i = 0;
+    size_t length;
     for (auto pair : dict)
     {
-        strncpy(dictKeys[i], pair.first.c_str(), maxKeyLength);
+        length = pair.first.copy(dictKeys[i], pair.first.size());
+        dictKeys[i][length] = '\0';
         i++;
     }
     MPI_Allgatherv(dictKeys, totalLength, MPI_CHAR, finalDictKeys, recvcounts, displs, MPI_CHAR, comm);

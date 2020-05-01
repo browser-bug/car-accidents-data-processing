@@ -35,16 +35,19 @@ typedef struct Row
     /* Methods */
     void setDate(std::string newDate)
     {
-        strncpy(date, newDate.c_str(), MAX_DATE_LENGTH);
+        std::size_t length = newDate.copy(date, newDate.size());
+        date[length] = '\0';
     }
     void setContributingFactor(std::string newContributingFactor)
     {
-        strncpy(contributing_factors[num_contributing_factors], newContributingFactor.c_str(), MAX_CF_LENGTH);
+        std::size_t length = newContributingFactor.copy(contributing_factors[num_contributing_factors], newContributingFactor.size());
+        contributing_factors[num_contributing_factors][length] = '\0';
         num_contributing_factors++;
     }
     void setBorough(std::string newBorough)
     {
-        strncpy(borough, newBorough.c_str(), MAX_BOROUGH_LENGTH);
+        std::size_t length = newBorough.copy(borough, newBorough.size());
+        borough[length] = '\0';
     }
 } Row;
 

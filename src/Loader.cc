@@ -20,7 +20,7 @@ void Loader::monoReadDataset(vector<Row> &data)
 }
 
 /* 
-The core structure of this code comes from the Stack Overflow Network.
+The core structure of this code comes from the Stack Overflow Network (license https://creativecommons.org/licenses/by-sa/4.0/legalcode)
 Link to the original answer/question: https://stackoverflow.com/questions/12939279/mpi-reading-from-a-text-file
 Author: Jonathan Dursi https://stackoverflow.com/users/463827/jonathan-dursi
 */
@@ -34,7 +34,7 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
 
     MPI_Offset globalstart;
     int mysize;
-    char *chunk;
+    string chunk;
 
     /* read in relevant chunk of file into "chunk",
      * which starts at location in the file globalstart
@@ -62,10 +62,10 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
         mysize = globalend - globalstart + 1; // fix the size of every proc
 
         /* allocate memory */
-        chunk = new char[mysize + 1];
+        chunk.resize(mysize + 1);
 
         /* everyone reads in their part */
-        MPI_File_read_at_all(input_file, globalstart, chunk, mysize, MPI_CHAR, MPI_STATUS_IGNORE);
+        MPI_File_read_at_all(input_file, globalstart, &chunk[0], mysize, MPI_CHAR, MPI_STATUS_IGNORE);
         chunk[mysize] = '\0';
 
         /*
@@ -101,12 +101,11 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
             else
             {
                 row.readRowFromString(line);
-                line.clear();
                 pushRow(data, row);
+                line.clear();
             }
         }
 
-        delete[] chunk;
         MPI_File_close(&input_file);
     }
 }
