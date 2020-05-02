@@ -49,7 +49,6 @@ notes_*
 MPI
 OpenMP
 TODO
-.keep
 
 # CSV files too big (these are of course needed by client side)
 dataset/collisions_[0-9]*.csv
