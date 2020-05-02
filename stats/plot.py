@@ -14,7 +14,9 @@ import re
 
 def main(argv):
     if (len(argv) != 2):
-        print(f"Usage: {argv[0]} <final_results_file>")
+        print(
+            f"""Generates a chart from <final_results_file> calculating averages based on variable number of processes and threads.
+Usage: {argv[0]} <final_results_file>""")
         sys.exit(2)
 
     resultFile = argv[1]

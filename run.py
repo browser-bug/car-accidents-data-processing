@@ -1,6 +1,5 @@
 import sys
 import getopt
-import argparse
 import os
 import glob
 import subprocess
