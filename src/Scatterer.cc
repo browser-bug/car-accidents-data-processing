@@ -1,6 +1,4 @@
-#include "../include/Scatterer.h"
-
-#include <cstring>
+#include "Scatterer.h"
 
 using namespace std;
 

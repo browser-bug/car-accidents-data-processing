@@ -1,9 +1,5 @@
 #include "Loader.h"
 
-#include <iostream>
-#include <fstream>
-#include <cstring>
-
 using namespace std;
 
 void Loader::monoReadDataset(vector<Row> &data)
@@ -34,7 +30,7 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
 
     MPI_Offset globalstart;
     int mysize;
-    string chunk;
+    char *chunk; // TODO convert this to string?
 
     /* read in relevant chunk of file into "chunk",
      * which starts at location in the file globalstart
@@ -62,10 +58,10 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
         mysize = globalend - globalstart + 1; // fix the size of every proc
 
         /* allocate memory */
-        chunk.resize(mysize + 1);
+        chunk = (char *)malloc((mysize + 1) * sizeof(char));
 
         /* everyone reads in their part */
-        MPI_File_read_at_all(input_file, globalstart, &chunk[0], mysize, MPI_CHAR, MPI_STATUS_IGNORE);
+        MPI_File_read_at_all(input_file, globalstart, chunk, mysize, MPI_CHAR, MPI_STATUS_IGNORE);
         chunk[mysize] = '\0';
 
         /*
@@ -105,6 +101,8 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
                 line.clear();
             }
         }
+
+        free(chunk);
 
         MPI_File_close(&input_file);
     }

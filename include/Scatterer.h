@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <cstring>
 
 #include "Node.h"
 

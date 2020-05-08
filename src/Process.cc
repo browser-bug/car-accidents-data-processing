@@ -1,7 +1,5 @@
 #include "Process.h"
 
-#include <string>
-
 using namespace std;
 
 void Process::processLethAccPerWeek(Row &data, int result[][NUM_WEEKS_PER_YEAR])
