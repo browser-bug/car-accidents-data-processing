@@ -93,7 +93,7 @@ def main(argv):
 
             if binaryFileMode != "serial":
                 runCommand = f"mpirun -n {numprocess} " + \
-                    (f"-f {hostFile} " if hostFile else "") + \
+                    (f"-f {hostFilePath.absolute()} " if hostFile else "") + \
                     f"./{binaryFileName} {numthreads} {dimension}"
             else:
                 runCommand = f"./{binaryFileName} {dimension}"
