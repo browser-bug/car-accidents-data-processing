@@ -3,18 +3,23 @@
 
 #include <mpi.h>
 
+#include <map>
+#include <vector>
 #include <cstring>
 
-#define BASE_YEAR 2012 // this defines the oldest year in the dataset
-#define NUM_YEARS 6
 #define NUM_WEEKS_PER_YEAR 53
-#define NUM_CONTRIBUTING_FACTORS 47
-#define NUM_BOROUGH 5
+
+#define BASE_YEAR 2012 // this defines the oldest year in the dataset
 
 #define MAX_DATE_LENGTH 11
 #define MAX_CF_PER_ROW 5
 #define MAX_CF_LENGTH 55
 #define MAX_BOROUGH_LENGTH 15
+
+// Defining dictionary aliases
+using Dictionary = std::map<std::string, int>;
+using Keys = std::vector<std::string>;
+using Values = std::vector<int>;
 
 // Data structure representing a row used for pre-processing
 typedef struct Row
