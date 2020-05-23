@@ -7,13 +7,12 @@
 
 #include "Node.h"
 
-using dictionary = std::map<std::string, int>;
-
 class Printer : public Node
 {
 public:
     Printer(const std::string &outPath,
-            const dictionary *dictQuery2 = nullptr, const dictionary *dictQuery3 = nullptr,
+            int numYears, int numWeeksPerYear,
+            const Dictionary *dictQuery2 = nullptr, const Dictionary *dictQuery3 = nullptr,
             int myRank = 0, MPI_Comm myCommunicator = 0) : Node(myRank, myCommunicator)
     {
         outputFilePath = outPath;
@@ -22,11 +21,14 @@ public:
             this->dictQuery2 = *dictQuery2;
         if (dictQuery3 != nullptr)
             this->dictQuery3 = *dictQuery3;
+
+        this->numYears = numYears;
+        this->numWeeksPerYear = numWeeksPerYear;
     }
 
-    void writeOutput(int data[][NUM_WEEKS_PER_YEAR]);                // Query1
-    void writeOutput(AccPair data[NUM_BOROUGH]);                     // Query2
-    void writeOutput(AccPair data[][NUM_YEARS][NUM_WEEKS_PER_YEAR]); // Query3
+    void writeLethAccPerWeek(int *data);     // Query1
+    void writeNumAccAndPerc(AccPair *data);  // Query2
+    void writeBoroughWeekAcc(AccPair *data); // Query3
 
     inline bool openFile()
     {
@@ -42,11 +44,13 @@ public:
     }
 
 private:
+    int numYears, numWeeksPerYear;
+
     std::string outputFilePath;
     std::ofstream outFile;
 
-    dictionary dictQuery2;
-    dictionary dictQuery3;
+    Dictionary dictQuery2;
+    Dictionary dictQuery3;
 };
 
 #endif
