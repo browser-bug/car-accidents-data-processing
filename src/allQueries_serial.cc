@@ -7,7 +7,7 @@
 #include "utils/include/data_types.h"
 
 #include "Loader.h"
-#include "Scatterer.h"
+#include "Communicator.h"
 #include "Process.h"
 #include "Printer.h"
 #include "Stats.h"
@@ -28,9 +28,9 @@ int main(int argc, char **argv)
     const string csv_path = dataset_dir_path + "collisions_" + dataset_dim + ".csv";
 
     // Results data
-    int global_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                  // Global data structure for QUERY1
-    AccPair global_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                       // Global data structure for QUERY2
-    AccPair global_boroughWeekAcc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Global data structure for QUERY3
+    int *global_lethAccPerWeek;     // Global data structure for QUERY1
+    AccPair *global_accAndPerc;     // Global data structure for QUERY2
+    AccPair *global_boroughWeekAcc; // Global data structure for QUERY3
 
     // Support dictonaries
     map<string, int> cfDictionary;
@@ -39,6 +39,8 @@ int main(int argc, char **argv)
     // Local data structures
     vector<Row> localRows;
     int my_num_rows;
+    int numYears, numWeeksPerYear;
+    int numContributingFactors, numBorough;
 
     // Timing stats variables
     double overallBegin = 0, overallDuration = 0; // overall application duration time
@@ -69,8 +71,19 @@ int main(int argc, char **argv)
     // [2] Data processing
     procBegin = cpuSecond();
 
+    /* Retrieving #elements for each query */
+    numYears = loader.getNumYears();
+    numWeeksPerYear = NUM_WEEKS_PER_YEAR;
+    numContributingFactors = cfDictionary.size();
+    numBorough = brghDictionary.size();
+
+    /* Allocating data */
+    global_lethAccPerWeek = new int[numYears * numWeeksPerYear]();
+    global_accAndPerc = new AccPair[numContributingFactors]();
+    global_boroughWeekAcc = new AccPair[numBorough * numYears * numWeeksPerYear]();
+
     cout << "Started processing dataset..." << endl;
-    Process processer(&cfDictionary, &brghDictionary);
+    Process processer(numYears, numWeeksPerYear, &cfDictionary, &brghDictionary);
 
     for (int i = 0; i < my_num_rows; i++)
     {
@@ -88,13 +101,16 @@ int main(int argc, char **argv)
     // Open output file
     const string result_dir_path = "../results/";
     const string result_path = result_dir_path + "result_serial_" + dataset_dim + ".txt";
-    Printer printer(result_path, &cfDictionary, &brghDictionary);
+    Printer printer(result_path, numYears, numWeeksPerYear, &cfDictionary, &brghDictionary);
 
-    printer.openFile();
-
-    printer.writeOutput(global_lethAccPerWeek);
-    printer.writeOutput(global_accAndPerc);
-    printer.writeOutput(global_boroughWeekAcc);
+    if (!printer.openFile())
+    {
+        cout << result_path << ": No such file or directory" << endl;
+        goto exit;
+    }
+    printer.writeLethAccPerWeek(global_lethAccPerWeek);
+    printer.writeNumAccAndPerc(global_accAndPerc);
+    printer.writeBoroughWeekAcc(global_boroughWeekAcc);
 
     printer.closeFile();
 
@@ -105,11 +121,23 @@ int main(int argc, char **argv)
     stats.setOverallTimes(&overallDuration);
 
     // Print statistics
-    stats.openFile();
+    if (!stats.openFile())
+    {
+        cout << stats_path << ": No such file or directory" << endl;
+        goto exit;
+    }
 
     stats.computeAverages();
     stats.printStats();
     stats.writeStats();
 
     stats.closeFile();
+
+exit:
+    // Deallocate memory
+    delete[] global_lethAccPerWeek;
+    delete[] global_accAndPerc;
+    delete[] global_boroughWeekAcc;
+
+    return 0;
 }

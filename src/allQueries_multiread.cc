@@ -8,7 +8,7 @@
 #include "utils/include/data_types.h"
 
 #include "Loader.h"
-#include "Scatterer.h"
+#include "Communicator.h"
 #include "Process.h"
 #include "Printer.h"
 #include "Stats.h"
@@ -29,10 +29,9 @@ int main(int argc, char **argv)
     const string dataset_dir_path = "../dataset/";
     const string csv_path = dataset_dir_path + "collisions_" + dataset_dim + ".csv";
     // Results data
-    int global_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                  // Global data structure for QUERY1
-    AccPair global_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                       // Global data structure for QUERY2
-    AccPair global_boroughWeekAcc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Global data structure for QUERY3
-
+    int *global_lethAccPerWeek;     // Global data structure for QUERY1
+    AccPair *global_accAndPerc;     // Global data structure for QUERY2
+    AccPair *global_boroughWeekAcc; // Global data structure for QUERY3
     // Support dictonaries
     map<string, int> cfDictionary;
     map<string, int> brghDictionary;
@@ -60,9 +59,12 @@ int main(int argc, char **argv)
     // Local data structures
     vector<Row> localRows;
     int my_num_rows;
-    int local_lethAccPerWeek[NUM_YEARS][NUM_WEEKS_PER_YEAR] = {};                  // Local data structure for QUERY1
-    AccPair local_accAndPerc[NUM_CONTRIBUTING_FACTORS] = {};                       // Local data structure for QUERY2
-    AccPair local_boroughWeekAcc[NUM_BOROUGH][NUM_YEARS][NUM_WEEKS_PER_YEAR] = {}; // Local data structure for QUERY3
+    int numYears, numWeeksPerYear;
+    int numContributingFactors, numBorough;
+
+    int *local_lethAccPerWeek;     // Local data structure for QUERY1
+    AccPair *local_accAndPerc;     // Local data structure for QUERY2
+    AccPair *local_boroughWeekAcc; // Local data structure for QUERY3
 
     // Timing stats variables
     double overallBegin = 0, overallDuration = 0; // overall application duration time
@@ -96,11 +98,11 @@ int main(int argc, char **argv)
     // [1a] Scattering
     scatterBegin = MPI_Wtime();
 
-    Scatterer scatterer(num_workers, myrank, MPI_COMM_WORLD);
+    Communicator comm(num_workers, myrank, MPI_COMM_WORLD);
 
     // Merge dictionaries from all processes
-    scatterer.mergeDictionary(cfDictionary, MAX_CF_LENGTH);
-    scatterer.mergeDictionary(brghDictionary, MAX_BOROUGH_LENGTH);
+    comm.mergeDictionary(cfDictionary, 0);
+    comm.mergeDictionary(brghDictionary, 0);
 
     scatterDuration = MPI_Wtime() - scatterBegin;
     stats.setScatterTimes(&scatterDuration);
@@ -110,17 +112,37 @@ int main(int argc, char **argv)
     // [2] Data processing
     procBegin = MPI_Wtime();
 
+    /* Retrieving #elements for each query */
+    int myNumYears = loader.getNumYears();
+    MPI_Allreduce(&myNumYears, &numYears, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    numWeeksPerYear = NUM_WEEKS_PER_YEAR;
+    numContributingFactors = cfDictionary.size();
+    numBorough = brghDictionary.size();
+
+    /* Allocating data */
+    if (myrank == 0)
+    {
+        global_lethAccPerWeek = new int[numYears * numWeeksPerYear]();
+        global_accAndPerc = new AccPair[numContributingFactors]();
+        global_boroughWeekAcc = new AccPair[numBorough * numYears * numWeeksPerYear]();
+    }
+
+    local_lethAccPerWeek = new int[numYears * numWeeksPerYear]();
+    local_accAndPerc = new AccPair[numContributingFactors]();
+    local_boroughWeekAcc = new AccPair[numBorough * numYears * numWeeksPerYear]();
+
     cout << "[Proc. " + to_string(myrank) + "] Started processing dataset..." << endl;
     int dynChunk = (int)round(my_num_rows * 0.02); // this tunes the chunk size exploited by dynamic scheduling based on percentage
-    Process processer(&cfDictionary, &brghDictionary, myrank, MPI_COMM_WORLD);
+    Process processer(numYears, numWeeksPerYear, &cfDictionary, &brghDictionary, myrank, MPI_COMM_WORLD);
 
     omp_set_num_threads(num_omp_threads);
 #pragma omp declare reduction(accPairSum:AccPair \
                               : omp_out += omp_in)
 
-#pragma omp parallel for default(shared) schedule(dynamic, dynChunk) reduction(+                                            \
-                                                                               : local_lethAccPerWeek) reduction(accPairSum \
-                                                                                                                 : local_accAndPerc, local_boroughWeekAcc)
+#pragma omp parallel for default(shared) schedule(dynamic, dynChunk) reduction(+                                                                                                                                \
+                                                                               : local_lethAccPerWeek[:numYears * numWeeksPerYear]) reduction(accPairSum                                                        \
+                                                                                                                                              : local_accAndPerc[:numContributingFactors], local_boroughWeekAcc \
+                                                                                                                                              [:numBorough * numYears * numWeeksPerYear])
     for (int i = 0; i < my_num_rows; i++)
     {
         processer.processLethAccPerWeek(localRows[i], local_lethAccPerWeek);
@@ -129,11 +151,11 @@ int main(int argc, char **argv)
     }
 
     // Query1
-    MPI_Reduce(local_lethAccPerWeek, global_lethAccPerWeek, (NUM_YEARS * NUM_WEEKS_PER_YEAR), MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(local_lethAccPerWeek, global_lethAccPerWeek, (numYears * numWeeksPerYear), MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     // Query2
-    MPI_Reduce(local_accAndPerc, global_accAndPerc, NUM_CONTRIBUTING_FACTORS, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
+    MPI_Reduce(local_accAndPerc, global_accAndPerc, numContributingFactors, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
     // Query3
-    MPI_Reduce(local_boroughWeekAcc, global_boroughWeekAcc, NUM_BOROUGH * NUM_YEARS * NUM_WEEKS_PER_YEAR, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
+    MPI_Reduce(local_boroughWeekAcc, global_boroughWeekAcc, numBorough * numYears * numWeeksPerYear, MPI_2INT, accPairSum, 0, MPI_COMM_WORLD);
 
     procDuration = MPI_Wtime() - procBegin;
     stats.setProcTimes(&procDuration);
@@ -147,13 +169,17 @@ int main(int argc, char **argv)
         // Open output file
         const string result_dir_path = "../results/";
         const string result_path = result_dir_path + "result_multiread_" + dataset_dim + ".txt";
-        Printer printer(result_path, &cfDictionary, &brghDictionary, myrank, MPI_COMM_WORLD);
+        Printer printer(result_path, numYears, numWeeksPerYear, &cfDictionary, &brghDictionary, myrank, MPI_COMM_WORLD);
 
-        printer.openFile();
+        if (!printer.openFile())
+        {
+            cout << result_path << ": No such file or directory" << endl;
+            goto exit;
+        }
 
-        printer.writeOutput(global_lethAccPerWeek);
-        printer.writeOutput(global_accAndPerc);
-        printer.writeOutput(global_boroughWeekAcc);
+        printer.writeLethAccPerWeek(global_lethAccPerWeek);
+        printer.writeNumAccAndPerc(global_accAndPerc);
+        printer.writeBoroughWeekAcc(global_boroughWeekAcc);
 
         printer.closeFile();
         writeDuration = MPI_Wtime() - writeBegin;
@@ -167,7 +193,11 @@ int main(int argc, char **argv)
     // Print statistics
     if (myrank == 0)
     {
-        stats.openFile();
+        if (!stats.openFile())
+        {
+            cout << stats_path << ": No such file or directory" << endl;
+            goto exit;
+        }
 
         stats.computeAverages();
         stats.printStats();
@@ -176,5 +206,19 @@ int main(int argc, char **argv)
         stats.closeFile();
     }
 
+exit:
+    // Deallocate memory
+    if (myrank == 0)
+    {
+        delete[] global_lethAccPerWeek;
+        delete[] global_accAndPerc;
+        delete[] global_boroughWeekAcc;
+    }
+
+    delete[] local_lethAccPerWeek;
+    delete[] local_accAndPerc;
+    delete[] local_boroughWeekAcc;
+
     MPI_Finalize();
+    return 0;
 }
