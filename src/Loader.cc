@@ -4,7 +4,6 @@ using namespace std;
 
 void Loader::monoReadDataset(vector<Row> &data)
 {
-    cout << "[Proc. " + to_string(rank) + "] Started loading dataset..." << endl;
     ifstream file(csv_path);
 
     CSVRow row;
@@ -32,21 +31,21 @@ Author: Jonathan Dursi https://stackoverflow.com/users/463827/jonathan-dursi
 */
 void Loader::multiReadDataset(vector<Row> &data, int num_workers)
 {
-    cout << "[Proc. " + to_string(rank) + "] Started loading dataset..." << endl;
     MPI_File input_file;
-    const int overlap = 200; // used to define overlapping intervals during csv reading phase
+    const int overlap = 200; /* tune this to define overlapping intervals (depends on the dataset structure) */
 
     MPI_File_open(comm, csv_path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &input_file);
 
-    MPI_Offset globalstart;
     int mysize;
-    char *chunk; // TODO convert this to string?
+    string chunk;
+    // char *chunk;
 
     /* read in relevant chunk of file into "chunk",
      * which starts at location in the file globalstart
      * and has size mysize 
      */
     {
+        MPI_Offset globalstart;
         MPI_Offset globalend;
         MPI_Offset filesize;
 
@@ -68,10 +67,11 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
         mysize = globalend - globalstart + 1; // fix the size of every proc
 
         /* allocate memory */
-        chunk = (char *)malloc((mysize + 1) * sizeof(char));
+        chunk.resize(mysize + 1);
+        // chunk = (char *)malloc((mysize + 1) * sizeof(char));
 
         /* everyone reads in their part */
-        MPI_File_read_at_all(input_file, globalstart, chunk, mysize, MPI_CHAR, MPI_STATUS_IGNORE);
+        MPI_File_read_at_all(input_file, globalstart, &chunk[0], mysize, MPI_CHAR, MPI_STATUS_IGNORE);
         chunk[mysize] = '\0';
 
         /*
@@ -121,7 +121,7 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
 
         numYears = max_year - min_year + 1;
 
-        free(chunk);
+        // free(chunk);
 
         MPI_File_close(&input_file);
     }
