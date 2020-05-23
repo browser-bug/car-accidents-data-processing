@@ -15,7 +15,7 @@ import re
 def main(argv):
     if (len(argv) != 2):
         print(
-            f"""Generates a chart from <final_results_file> calculating averages based on variable number of processes and threads.
+            f"""Generates a chart from <final_results_file> based on variable number of processes and threads.
 Usage: {argv[0]} <final_results_file>""")
         sys.exit(2)
 
@@ -53,10 +53,10 @@ Usage: {argv[0]} <final_results_file>""")
         if i == 0:  # we need just one since num.threads doesn't affect loading times
             ax2.title.set_text("Loading times")
             loadTimes = gp['LOADING'].tolist()
-            if mode not in "serial":
-                ax2.plot(num_proc, loadTimes, marker='*')
-            else:
+            if mode not in "multiread":
                 ax2.bar(num_proc, loadTimes, width=0.2)
+            else:
+                ax2.plot(num_proc, loadTimes, marker='*')
             ax2.set_xticks(num_proc)
 
         # Scattering
@@ -77,16 +77,6 @@ Usage: {argv[0]} <final_results_file>""")
         else:
             ax4.bar(num_proc, procTimes, width=0.2)
         ax4.set_xticks(num_proc)
-
-    totalOverallTimes = df['OVERALL'].tolist()
-    totalLoadingTimes = df['LOADING'].tolist()
-    totalScatteringTimes = df['SCATTERING'].tolist()
-    totalProcessingTimes = df['PROCESSING'].tolist()
-    ax1.set_yticks(roundAndRange(totalOverallTimes, 0.5))
-    ax2.set_yticks(roundAndRange(totalLoadingTimes, 0.5))
-    if mode == 'monoread':
-        ax3.set_yticks(roundAndRange(totalScatteringTimes, 0.5))
-    ax4.set_yticks(roundAndRange(totalProcessingTimes, 0.5))
 
     for ax in axes.flat:
         ax.set_xlabel('Num. process')
@@ -121,13 +111,6 @@ def getDatasetSize(resultFile):
         print(f"Result file name isn't correct ({resultFile})")
         sys.exit(1)
     return result.group(1)
-
-
-def roundAndRange(l, S):
-    """Round all element of a list <l> and return a range with step <S>"""
-
-    roundedList = list(map(round, l))
-    return np.arange(min(roundedList), max(roundedList) + 1, S)
 
 
 if __name__ == "__main__":
