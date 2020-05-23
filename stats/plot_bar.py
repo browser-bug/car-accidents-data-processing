@@ -59,26 +59,26 @@ Usage: {argv[0]} <final_results_file> <num_threads>""")
     loadBar = ax.barh(processNumbers,
                       loadTimes,
                       color="green",
-                      label="Load Time")
-    scatteringBar = ax.barh(processNumbers,
-                            scatteringTimes,
-                            left=loadTimes,
-                            color="y",
-                            label="Scattering Time")
-    load_scattering = [x + y for x, y in zip(loadTimes, scatteringTimes)]
+                      label="Loading")
     processingBar = ax.barh(processNumbers,
                             processingTimes,
-                            left=load_scattering,
+                            left=loadTimes,
                             color="brown",
-                            label="Processing Time")
-    load_scattering_processing = [
-        x + y for x, y in zip(load_scattering, processingTimes)
-    ]
+                            label="Processing")
+    load_processing = [x + y for x, y in zip(loadTimes, processingTimes)]
     outputBar = ax.barh(processNumbers,
                         outputTimes,
-                        left=load_scattering_processing,
+                        left=load_processing,
                         color="b",
-                        label="Writing Time")
+                        label="Writing")
+    load_processing_writing = [
+        x + y for x, y in zip(load_processing, outputTimes)
+    ]
+    scatteringBar = ax.barh(processNumbers,
+                            scatteringTimes,
+                            left=load_processing_writing,
+                            color="y",
+                            label="Scattering")
 
     # Add time values on top of relevant bars
     threshold = 0.1  # filters all stage times below this value
