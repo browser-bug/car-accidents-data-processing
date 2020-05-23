@@ -166,16 +166,6 @@ int getDay(string date)
     return stoi(date.substr(3, 2));
 }
 
-map<string, int> createDictionary(int num_keys, char **keys, int *values)
-{
-    map<string, int> dictionary;
-
-    for (int i = 0; i < num_keys; i++)
-        dictionary.insert({string(keys[i]), values[i]});
-
-    return dictionary;
-}
-
 double cpuSecond()
 {
     struct timeval tp;

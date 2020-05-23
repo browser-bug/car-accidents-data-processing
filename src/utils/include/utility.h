@@ -132,9 +132,6 @@ int getYear(std::string date);
 int getMonth(std::string date);
 int getDay(std::string date);
 
-/* This creates a dictonary from an array of UNIQUE words. */
-std::map<std::string, int> createDictionary(int num_keys, char **keys, int *values);
-
 double cpuSecond();
 
 #endif
