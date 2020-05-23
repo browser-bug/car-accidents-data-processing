@@ -8,11 +8,21 @@ void Loader::monoReadDataset(vector<Row> &data)
     ifstream file(csv_path);
 
     CSVRow row;
+    int min_year = INT_MAX, max_year = INT_MIN;
+
     for (CSVIterator loop(file); loop != CSVIterator(); ++loop)
     {
         row = (*loop);
-        pushRow(data, row);
+        if (!row.isHeader())
+        {
+            pushRow(data, row);
+            int year = getYear(row[DATE]);
+            min_year = min(year, min_year);
+            max_year = max(year, max_year);
+        }
     }
+
+    numYears = max_year - min_year + 1;
 }
 
 /* 
@@ -87,6 +97,7 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
 
         CSVRow row;
         string line;
+        int min_year = INT_MAX, max_year = INT_MIN;
 
         for (int i = locstart; i <= locend; i++)
         {
@@ -97,10 +108,18 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
             else
             {
                 row.readRowFromString(line);
-                pushRow(data, row);
+                if (!row.isHeader())
+                {
+                    pushRow(data, row);
+                    int year = getYear(row[DATE]);
+                    min_year = min(year, min_year);
+                    max_year = max(year, max_year);
+                }
                 line.clear();
             }
         }
+
+        numYears = max_year - min_year + 1;
 
         free(chunk);
 
@@ -110,9 +129,6 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
 
 void Loader::pushRow(vector<Row> &data, CSVRow row)
 {
-    if (row.isHeader()) // skip header
-        return;
-
     int num_pers_killed = row.getNumPersonsKilled();
     int num_contributing_factors = 0;
     Row newRow(num_pers_killed, num_contributing_factors);

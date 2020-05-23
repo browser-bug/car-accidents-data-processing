@@ -2,16 +2,16 @@
 
 using namespace std;
 
-void Process::processLethAccPerWeek(Row &data, int result[][NUM_WEEKS_PER_YEAR])
+void Process::processLethAccPerWeek(Row &data, int *result)
 {
     if (data.isLethal())
     {
         auto date = computeWeekAndYear(data.date);
-        result[date.year][date.week]++;
+        result[(date.year * numWeeksPerYear) + date.week]++;
     }
 }
 
-void Process::processNumAccAndPerc(Row &data, AccPair result[NUM_BOROUGH])
+void Process::processNumAccAndPerc(Row &data, AccPair *result)
 {
     int cfIndex = 0;
 
@@ -24,7 +24,7 @@ void Process::processNumAccAndPerc(Row &data, AccPair result[NUM_BOROUGH])
     }
 }
 
-void Process::processBoroughWeekAcc(Row &data, AccPair result[][NUM_YEARS][NUM_WEEKS_PER_YEAR])
+void Process::processBoroughWeekAcc(Row &data, AccPair *result)
 {
     int brghIndex = 0;
     string borough(data.borough);
@@ -34,9 +34,9 @@ void Process::processBoroughWeekAcc(Row &data, AccPair result[][NUM_YEARS][NUM_W
         auto date = computeWeekAndYear(data.date);
 
         brghIndex = dictQuery3.at(borough);
-        result[brghIndex][date.year][date.week].numAccidents++;
+        result[(brghIndex * numYears * numWeeksPerYear) + (date.year * numWeeksPerYear) + date.week].numAccidents++;
         if (data.isLethal())
-            result[brghIndex][date.year][date.week].numLethalAccidents++;
+            result[(brghIndex * numYears * numWeeksPerYear) + (date.year * numWeeksPerYear) + date.week].numLethalAccidents++;
     }
 }
 

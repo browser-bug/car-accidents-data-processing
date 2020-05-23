@@ -4,18 +4,18 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <cstring>
+#include <limits.h>
 
 #include "Node.h"
-
-using dictionary = std::map<std::string, int>;
 
 class Loader : public Node
 {
 public:
-    Loader(const std::string &csvFilePath, int myRank = 0, MPI_Comm myCommunicator = 0) : Node(myRank, myCommunicator), csv_path(csvFilePath) {}
+    Loader(const std::string &csvFilePath, int myRank = 0, MPI_Comm myCommunicator = 0) : Node(myRank, myCommunicator), csv_path(csvFilePath), numYears(0) {}
 
     void monoReadDataset(std::vector<Row> &data);
     /* 
@@ -25,14 +25,19 @@ public:
     */
     void multiReadDataset(std::vector<Row> &data, int num_workers);
 
-    inline dictionary getCFDict()
+    inline Dictionary getCFDict()
     {
         return cfDictionary;
     }
 
-    inline dictionary getBRGHDict()
+    inline Dictionary getBRGHDict()
     {
         return brghDictionary;
+    }
+
+    inline int getNumYears()
+    {
+        return numYears;
     }
 
 private:
@@ -40,8 +45,10 @@ private:
 
     std::string csv_path;
 
-    dictionary cfDictionary;
-    dictionary brghDictionary;
+    Dictionary cfDictionary;
+    Dictionary brghDictionary;
+
+    int numYears;
 };
 
 #endif
