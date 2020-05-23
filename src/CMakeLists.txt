@@ -8,7 +8,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../bin) # this se
 # list source files
 set(SRC_FILES
   Loader.cc
-  Scatterer.cc
+  Communicator.cc
   Process.cc
   Printer.cc
   Stats.cc
