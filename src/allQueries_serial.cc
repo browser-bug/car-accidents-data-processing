@@ -58,6 +58,7 @@ int main(int argc, char **argv)
     // [1] Loading data from file
     loadBegin = cpuSecond();
 
+    cout << "Started loading dataset..." << endl;
     Loader loader(csv_path);
     loader.monoReadDataset(localRows);
     my_num_rows = localRows.size();

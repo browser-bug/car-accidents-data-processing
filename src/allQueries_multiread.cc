@@ -28,10 +28,12 @@ int main(int argc, char **argv)
     // Load dataset variables
     const string dataset_dir_path = "../dataset/";
     const string csv_path = dataset_dir_path + "collisions_" + dataset_dim + ".csv";
+
     // Results data
     int *global_lethAccPerWeek;     // Global data structure for QUERY1
     AccPair *global_accAndPerc;     // Global data structure for QUERY2
     AccPair *global_boroughWeekAcc; // Global data structure for QUERY3
+
     // Support dictonaries
     map<string, int> cfDictionary;
     map<string, int> brghDictionary;
@@ -83,6 +85,7 @@ int main(int argc, char **argv)
     // [1] Loading data from file
     loadBegin = MPI_Wtime();
 
+    cout << "[Proc. " + to_string(myrank) + "] Started loading dataset..." << endl;
     Loader loader(csv_path, myrank, MPI_COMM_WORLD);
     loader.multiReadDataset(localRows, num_workers);
     my_num_rows = localRows.size();
@@ -132,9 +135,9 @@ int main(int argc, char **argv)
     local_boroughWeekAcc = new AccPair[numBorough * numYears * numWeeksPerYear]();
 
     cout << "[Proc. " + to_string(myrank) + "] Started processing dataset..." << endl;
-    int dynChunk = (int)round(my_num_rows * 0.02); // this tunes the chunk size exploited by dynamic scheduling based on percentage
     Process processer(numYears, numWeeksPerYear, &cfDictionary, &brghDictionary, myrank, MPI_COMM_WORLD);
 
+    int dynChunk = (int)round(my_num_rows * 0.02); // this tunes the chunk size exploited by dynamic scheduling based on percentage
     omp_set_num_threads(num_omp_threads);
 #pragma omp declare reduction(accPairSum:AccPair \
                               : omp_out += omp_in)

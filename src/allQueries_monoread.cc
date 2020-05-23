@@ -89,6 +89,7 @@ int main(int argc, char **argv)
     if (myrank == 0)
     {
         loadBegin = MPI_Wtime();
+        cout << "[Proc. " + to_string(myrank) + "] Started loading dataset..." << endl;
         Loader loader(csv_path, myrank, MPI_COMM_WORLD);
         loader.monoReadDataset(dataScatter);
         csv_size = dataScatter.size();
@@ -112,7 +113,7 @@ int main(int argc, char **argv)
     comm.broadcastDictionary(cfDictionary, 0);
     comm.broadcastDictionary(brghDictionary, 0);
 
-    comm.scatterData(&dataScatter, &localRows, rowType, csv_size);
+    comm.scatterData(&dataScatter, csv_size, rowType, &localRows, rowType, 0);
     my_num_rows = localRows.size();
 
     scatterDuration = MPI_Wtime() - scatterBegin;
@@ -142,9 +143,9 @@ int main(int argc, char **argv)
     local_boroughWeekAcc = new AccPair[numBorough * numYears * numWeeksPerYear]();
 
     cout << "[Proc. " + to_string(myrank) + "] Started processing dataset..." << endl;
-    int dynChunk = (int)round(my_num_rows * 0.02); // this tunes the chunk size exploited by dynamic scheduling based on percentage
     Process processer(numYears, numWeeksPerYear, &cfDictionary, &brghDictionary, myrank, MPI_COMM_WORLD);
 
+    int dynChunk = (int)round(my_num_rows * 0.02); // this tunes the chunk size exploited by dynamic scheduling based on percentage
     omp_set_num_threads(num_omp_threads);
 #pragma omp declare reduction(accPairSum:AccPair \
                               : omp_out += omp_in)
