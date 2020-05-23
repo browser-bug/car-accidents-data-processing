@@ -16,7 +16,7 @@ public:
     Communicator(int num_workers, int myRank = 0, MPI_Comm myCommunicator = 0) : Node(myRank, myCommunicator),
                                                                                  num_workers(num_workers) {}
 
-    void scatterData(std::vector<Row> *src, std::vector<Row> *dest, MPI_Datatype type, int csv_size);
+    void scatterData(std::vector<Row> *sendbuf, int buf_size, MPI_Datatype sendtype, std::vector<Row> *recvbuf, MPI_Datatype type, int root);
 
     /* Dictionary utilities */
     void sendDictionary(Dictionary &dict, int dest, int tag);

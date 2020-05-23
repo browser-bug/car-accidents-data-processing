@@ -2,7 +2,7 @@
 
 using namespace std;
 
-void Communicator::scatterData(vector<Row> *src, vector<Row> *dest, MPI_Datatype type, int csv_size)
+void Communicator::scatterData(std::vector<Row> *sendbuf, int buf_size, MPI_Datatype sendtype, std::vector<Row> *recvbuf, MPI_Datatype recvtype, int root)
 {
     int num_rows = 0;
     int *sendcounts;
@@ -10,7 +10,7 @@ void Communicator::scatterData(vector<Row> *src, vector<Row> *dest, MPI_Datatype
 
     if (rank == 0)
     {
-        num_rows = csv_size / num_workers + csv_size % num_workers; // TODO maybe change this so master process doesn't get overloaded with too many rows
+        num_rows = buf_size / num_workers + buf_size % num_workers; // TODO maybe change this so master process doesn't get overloaded with too many rows
         sendcounts = new int[num_workers];
         displs = new int[num_workers];
 
@@ -20,16 +20,16 @@ void Communicator::scatterData(vector<Row> *src, vector<Row> *dest, MPI_Datatype
         int dataOffset = 0;
         for (int i = 1; i < num_workers; i++)
         {
-            sendcounts[i] = csv_size / num_workers;
+            sendcounts[i] = buf_size / num_workers;
             dataOffset += sendcounts[i - 1];
             displs[i] = dataOffset;
         }
     }
 
     MPI_Scatter(sendcounts, 1, MPI_INT, &num_rows, 1, MPI_INT, 0, comm);
-    dest->resize(num_rows);
+    recvbuf->resize(num_rows);
 
-    MPI_Scatterv(src->data(), sendcounts, displs, type, dest->data(), num_rows, type, 0, comm);
+    MPI_Scatterv(sendbuf->data(), sendcounts, displs, sendtype, recvbuf->data(), num_rows, recvtype, root, comm);
 }
 
 void Communicator::sendDictionary(Dictionary &dict, int dest, int tag)
