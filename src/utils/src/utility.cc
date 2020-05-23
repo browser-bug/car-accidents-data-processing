@@ -146,7 +146,7 @@ int getWeek(string date)
 {
     tm lTM = {};
     istringstream lTimestamp(date);
-    lTimestamp >> get_time(&lTM, "%m/%d/%Y"); // date format : 03/14/2016
+    lTimestamp >> get_time(&lTM, "%m/%d/%Y"); // date format : mm/dd/yyyy
 
     return getWeek(&lTM);
 }
