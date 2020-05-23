@@ -37,8 +37,8 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
     MPI_File_open(comm, csv_path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &input_file);
 
     int mysize;
-    string chunk;
-    // char *chunk;
+    // string chunk;
+    char *chunk;
 
     /* read in relevant chunk of file into "chunk",
      * which starts at location in the file globalstart
@@ -67,8 +67,8 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
         mysize = globalend - globalstart + 1; // fix the size of every proc
 
         /* allocate memory */
-        chunk.resize(mysize + 1);
-        // chunk = (char *)malloc((mysize + 1) * sizeof(char));
+        // chunk.resize(mysize + 1);
+        chunk = new char[mysize + 1];
 
         /* everyone reads in their part */
         MPI_File_read_at_all(input_file, globalstart, &chunk[0], mysize, MPI_CHAR, MPI_STATUS_IGNORE);
@@ -121,7 +121,7 @@ void Loader::multiReadDataset(vector<Row> &data, int num_workers)
 
         numYears = max_year - min_year + 1;
 
-        // free(chunk);
+        delete[] chunk;
 
         MPI_File_close(&input_file);
     }
