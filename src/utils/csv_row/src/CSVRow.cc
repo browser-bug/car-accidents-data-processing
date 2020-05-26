@@ -4,7 +4,7 @@ using namespace std;
 
 int CSVRow::getNumPersonsKilled()
 {
-    int num_ped_killed, num_cycl_killed, num_mot_killed = 0;
+    int num_ped_killed, num_cycl_killed, num_mot_killed;
     try
     {
         num_ped_killed = stoi(m_data[NUMBER_OF_PEDESTRIANS_KILLED]);
