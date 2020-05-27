@@ -44,7 +44,7 @@ set_property(GLOBAL PROPERTY LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 endif()
 
 # create binary files
-add_executable (allQueries_multiread.o allQueries_multiread.cc)
-add_executable (allQueries_monoread.o allQueries_monoread.cc)
-add_executable (allQueries_serial.o allQueries_serial.cc)
+add_executable (multiread.o multiread.cc)
+add_executable (monoread.o monoread.cc)
+add_executable (serial.o serial.cc)
 add_executable (test_MPICH.o test_MPICH.cc)
